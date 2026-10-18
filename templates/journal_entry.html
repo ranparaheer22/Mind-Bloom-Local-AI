@@ -172,7 +172,9 @@
  {% if m.media_type == 'photo' %}
  <img src="/static/uploads/journal/{{ entry.user_id }}/{{ m.filename }}" alt="Journal photo"/>
  {% elif m.media_type == 'video' %}
- <video src="/static/uploads/journal/{{ entry.user_id }}/{{ m.filename }}" muted></video>
+ <video src="/static/uploads/journal/{{ entry.user_id }}/{{ m.filename }}" controls playsinline preload="metadata" aria-label="Journal video"></video>
+ {% elif m.media_type == 'audio' %}
+ <audio src="/static/uploads/journal/{{ entry.user_id }}/{{ m.filename }}" controls preload="metadata" aria-label="Journal audio recording"></audio>
  {% else %}
  <div class="audio-thumb">🎙</div>
  {% endif %}
@@ -339,7 +341,7 @@
  reader.onload = e => { div.innerHTML = `<img src="${e.target.result}" alt="New photo"/>`; };
  reader.readAsDataURL(file);
  } else if (file.type.startsWith('video/')) {
- div.innerHTML = `<video src="${URL.createObjectURL(file)}" muted></video>`;
+ div.innerHTML = `<video src="${URL.createObjectURL(file)}" controls playsinline preload="metadata" aria-label="Video preview"></video>`;
  } else {
  div.innerHTML = `<div class="audio-thumb">🎙</div>`;
  }
@@ -349,6 +351,7 @@
  }
 
  function removeExistingMedia(mediaId, btn) {
+ if (!confirm('Delete this photo, video, or audio attachment? This cannot be undone.')) return;
  fetch(`/api/journal/media/${mediaId}/delete`, { method: 'POST' })
  .then(r => r.json())
  .then(data => {

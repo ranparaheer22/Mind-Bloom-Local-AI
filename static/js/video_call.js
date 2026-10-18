@@ -4,7 +4,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var CFG = window.MB_VIDEO || { crisis: [] };
   var active = false, gender = 'female', seconds = 0, timer = null;
-  var chatSessionId = null, sending = false, recognition = null, cameraStream = null, micOn = false;
+  var chatSessionId = null, sending = false, recognition = null, cameraStream = null, micOn = false, lastReply = '';
   var NAMES = { female: 'Racheal', male: 'Ryan' };
   var GREETINGS = {
     female: 'Hi, I’m Racheal. What would you like to talk about today?',
@@ -71,17 +71,23 @@
     var english = voices.filter(function (v) { return (v.lang || '').toLowerCase().indexOf('en') === 0; });
     var candidates = english.length ? english : voices;
     candidates.sort(function (a,b) { return voiceScore(b, gender) - voiceScore(a, gender); });
-    var best = candidates[0];
-    return best && voiceScore(best, gender) >= 5 ? best : null;
+    // Use the best available English voice, even when its platform name is unfamiliar.
+    // Returning null here can make speech silently fail on Windows/Android voices.
+    return candidates[0] || voices[0] || null;
   }
   function speak(text, voiceRetry) {
-    if (!text || !('speechSynthesis' in window)) { status('Reply ready · speech playback is not supported here'); return; }
-    // Chrome sometimes loads its installed voices asynchronously on the first visit.
-    if (!window.speechSynthesis.getVoices().length && (voiceRetry || 0) < 4) {
-      window.setTimeout(function () { speak(text, (voiceRetry || 0) + 1); }, 250);
+    if (!text || !('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+      status('Voice playback is unavailable in this browser. Try Chrome or enable text-to-speech in Android settings.');
+      return;
+    }
+    // Some browsers populate voices only after the page has been used once.
+    var voices = window.speechSynthesis.getVoices() || [];
+    if (!voices.length && (voiceRetry || 0) < 8) {
+      window.setTimeout(function () { speak(text, (voiceRetry || 0) + 1); }, 350);
       return;
     }
     window.speechSynthesis.cancel();
+    window.speechSynthesis.resume();
     var utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-IN';
     var selectedVoice = chooseVoice();
@@ -94,14 +100,27 @@
     utterance.pitch = gender === 'female' ? 1.16 : 0.91;
     utterance.onstart = function () { setSpeaking(true); status(NAMES[gender] + ' is speaking…'); };
     utterance.onend = function () { setSpeaking(false); if (active) status('Listening or type a message'); };
-    utterance.onerror = function () { setSpeaking(false); if (active) status('Voice playback failed · you can still read the reply'); };
+    utterance.onerror = function (event) {
+      setSpeaking(false);
+      if (active) status('Voice playback failed (' + (event.error || 'unknown error') + '). Check device volume and text-to-speech settings.');
+    };
     window.speechSynthesis.speak(utterance);
+    // Resume again after speak for Chromium implementations that retain a paused queue.
+    window.setTimeout(function () { if (window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 100);
   }
+  function replayLastReply() {
+    if (!lastReply) { status('There is no reply to replay yet.'); return; }
+    speak(lastReply);
+  }
+  var replayButton = $('btn-speak-reply');
+  if (replayButton) replayButton.addEventListener('click', replayLastReply);
   if ('speechSynthesis' in window) {
     window.speechSynthesis.onvoiceschanged = function () { /* refresh voice list before the next reply */ };
   }
   async function startCall() {
     if (active) return;
+    // Warm up browser speech synthesis from the Start button gesture.
+    try { if ('speechSynthesis' in window) { window.speechSynthesis.cancel(); window.speechSynthesis.resume(); window.speechSynthesis.getVoices(); } } catch (e) {}
     active = true; seconds = 0; sending = false;
     $('ended-card').style.display = 'none'; $('call-screen').classList.add('open');
     $('cap-you').textContent = ''; $('cap-doc').textContent = 'Connecting to Mind Bloom…';
@@ -117,7 +136,7 @@
       if (!res.ok || !data.success || !data.session_id) throw new Error(data.error || 'Could not start a chat session.');
       chatSessionId = data.session_id;
       var greeting = GREETINGS[gender];
-      $('cap-doc').textContent = greeting; status('Ready · talk or type naturally'); speak(greeting);
+      $('cap-doc').textContent = greeting; lastReply = greeting; if ($('btn-speak-reply')) $('btn-speak-reply').style.display = 'inline-block'; status('Ready · talk or type naturally'); speak(greeting);
     } catch (e) {
       status('Could not connect'); $('cap-doc').textContent = e.message || 'Could not connect to Mind Bloom. Please try again.';
       active = false; clearInterval(timer); timer = null;
@@ -156,7 +175,7 @@
         try { var ev = JSON.parse(buffer); if (ev.type === 'chunk' && ev.text) answer += ev.text; } catch(e) {}
       }
       if (!answer.trim()) answer = 'I want to make sure I understand you. Could you say a little more about the part that matters most?';
-      $('cap-doc').textContent = answer; speak(answer);
+      $('cap-doc').textContent = answer; lastReply = answer; if ($('btn-speak-reply')) $('btn-speak-reply').style.display = 'inline-block'; speak(answer);
     } catch (e) {
       $('cap-doc').textContent = e.message || 'Something went wrong. Please try again.'; status('Message failed');
     } finally {

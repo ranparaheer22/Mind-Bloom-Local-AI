@@ -1179,6 +1179,10 @@ body.has-shell {
 /* ── Journal media (photo/video/audio) previews ── */
 .media-thumb { position: relative; width: 84px; height: 84px; border-radius: 12px; overflow: hidden; border: 1px solid var(--sage-100); background: var(--sage-50); }
 .media-thumb img, .media-thumb video { width: 100%; height: 100%; object-fit: cover; }
+.media-thumb:has(audio), .media-thumb:has(video) { width: min(100%, 280px); height: auto; min-height: 84px; }
+.media-thumb:has(video) video { display: block; height: auto; aspect-ratio: 16 / 9; background: #111; }
+.media-thumb audio { display: block; width: 100%; margin-top: 22px; }
+.media-thumb:has(audio) { padding-top: 8px; }
 .media-thumb.audio-thumb { display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
 .media-type-tabs { display: flex; gap: 8px; margin-top: 10px; }
 .media-type-tabs .upload-btn { margin-top: 0; font-size: 0.78rem; padding: 8px 12px; }

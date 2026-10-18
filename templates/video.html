@@ -212,6 +212,7 @@
  <div class="captions" aria-live="polite">
  <div class="cap-you" id="cap-you"></div>
  <div class="cap-doc" id="cap-doc"></div>
+  <button type="button" id="btn-speak-reply" style="display:none;margin:8px auto 0;padding:8px 14px;border:1px solid var(--sage-300);border-radius:12px;background:var(--surface);color:var(--sage-700);cursor:pointer;">🔊 Hear reply again</button>
  </div>
 
  <div class="type-bar" id="type-bar">
@@ -231,6 +232,6 @@
 
  <script src="/static/js/main.js"></script>
  <script>window.MB_VIDEO = { crisis: {{ crisis_resources | tojson }} };</script>
- <script src="/static/js/video_call.js?v=reply-timeout-fix-1"></script>
+ <script src="/static/js/video_call.js?v=voice-replay-fix-1"></script>
 </body>
 </html>

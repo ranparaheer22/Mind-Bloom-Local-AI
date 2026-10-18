@@ -13,12 +13,9 @@
  }
  .med-card h3 { font-family: 'Quicksand', sans-serif; font-weight: 700; color: var(--sage-700); font-size: 1rem; margin-bottom: 4px; }
  .med-card .med-sub { font-size: 0.8rem; color: var(--text-light); margin-bottom: 14px; }
- .stopwatch-display {
- text-align: center; font-family: 'Josefin Sans', sans-serif; font-size: 2.6rem;
- color: var(--sage-700); letter-spacing: 0.03em; margin: 10px 0 16px;
- }
- .stopwatch-controls { display: flex; gap: 10px; justify-content: center; }
- .stopwatch-controls .btn { min-width: 90px; }
+  .timer-display { text-align:center; font-family:"Josefin Sans",sans-serif; font-size:2.6rem; color:var(--sage-700); margin:10px 0 16px; }
+  .timer-controls { display:flex; gap:10px; justify-content:center; }
+  .timer-controls .btn { min-width:90px; }
  .timer-presets { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 6px; }
  .timer-preset-btn {
  padding: 7px 14px; border-radius: 10px; border: 1px solid var(--sage-100);
@@ -55,8 +52,6 @@
  .heatmap-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
  .heatmap-cell { aspect-ratio: 1; border-radius: 3px; background: var(--sage-50); }
  .heatmap-cell.active { background: var(--sage-500); }
- .sleep-mode-row { display: flex; align-items: center; gap: 8px; justify-content: center; margin-top: 12px; font-size: 0.8rem; color: var(--text-light); }
- .sleep-mode-row input { width: auto; }
  </style>
 </head>
 <body class="has-shell">
@@ -101,17 +96,6 @@
  <div class="heatmap-grid" id="med-heatmap"></div>
  </div>
 
- <!-- Stopwatch -->
- <div class="med-card">
- <h3>⏱ Meditation stopwatch</h3>
- <div class="med-sub">Start it before you begin, stop when you're done.</div>
- <div class="stopwatch-display" id="sw-display">00:00</div>
- <div class="stopwatch-controls">
- <button class="btn btn-primary" id="sw-start-btn" onclick="toggleStopwatch()">Start</button>
- <button class="btn btn-outline" onclick="resetStopwatch()">Reset</button>
- </div>
- </div>
-
  <!-- Countdown Timer -->
  <div class="med-card" id="timer-card">
  <h3>⏳ Meditation timer</h3>
@@ -130,21 +114,17 @@
  min
  </div>
 
- <div class="stopwatch-display" id="timer-display">05:00</div>
- <div class="stopwatch-controls">
+ <div class="timer-display" id="timer-display">05:00</div>
+ <div class="timer-controls">
  <button class="btn btn-primary" id="timer-start-btn" onclick="toggleTimer()">Start</button>
  <button class="btn btn-outline" onclick="resetTimer()">Reset</button>
- </div>
- <div class="sleep-mode-row">
- <input type="checkbox" id="sleep-mode-toggle"/>
- <label for="sleep-mode-toggle">🌙 Sleep mode — fade music out and stop quietly instead of ringing</label>
  </div>
  </div>
 
  <!-- Meditative music -->
  <div class="med-card">
  <h3>🎵 Meditative music</h3>
- <div class="med-sub">Play something calming while you sit.</div>
+ <div class="med-sub">Play your meditation track while you sit quietly.</div>
  <audio id="med-audio" controls preload="none" src="/static/audio/meditation-track.mp3"
  onerror="document.getElementById('audio-fallback').style.display='block'">
  </audio>
@@ -160,7 +140,7 @@
  <!-- Log a session -->
  <div class="med-card">
  <h3>📝 Log this session</h3>
- <div class="med-sub">Uses the stopwatch time, or enter minutes manually.</div>
+ <div class="med-sub">Your timer duration is filled in automatically, or enter minutes manually.</div>
  <div class="form-group">
  <label class="form-label">Duration (minutes)</label>
  <input class="form-input" type="number" min="1" step="1" id="inp-duration" placeholder="e.g. 10"/>
@@ -192,7 +172,7 @@
  </div>
  {% endfor %}
  {% else %}
- <div class="empty-hint">No sessions yet — start the stopwatch above 🌱</div>
+ <div class="empty-hint">No sessions yet — start a meditation timer to begin 🌱</div>
  {% endif %}
  </div>
  </div>
@@ -202,36 +182,13 @@
 
  <script src="/static/js/main.js"></script>
  <script>
- // ── Stopwatch ──
- let swSeconds = 0, swInterval = null, swRunning = false;
- function formatTime(totalSeconds) {
+ // ── Countdown timer ──
+  function formatTime(totalSeconds) {
  const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
  const s = (totalSeconds % 60).toString().padStart(2, '0');
  return `${m}:${s}`;
  }
- function toggleStopwatch() {
- const btn = document.getElementById('sw-start-btn');
- if (swRunning) {
- clearInterval(swInterval);
- swRunning = false;
- btn.textContent = 'Resume';
- document.getElementById('inp-duration').value = Math.max(1, Math.round(swSeconds / 60));
- } else {
- swInterval = setInterval(() => {
- swSeconds++;
- document.getElementById('sw-display').textContent = formatTime(swSeconds);
- }, 1000);
- swRunning = true;
- btn.textContent = 'Pause';
- }
- }
- function resetStopwatch() {
- clearInterval(swInterval);
- swRunning = false;
- swSeconds = 0;
- document.getElementById('sw-display').textContent = '00:00';
- document.getElementById('sw-start-btn').textContent = 'Start';
- }
+ 
 
  // ── Countdown timer ──
  let timerTotal = 5 * 60, timerSeconds = 5 * 60, timerInterval = null, timerRunning = false;
@@ -296,7 +253,9 @@
 
  function playChime() {
  try {
- const ctx = new (window.AudioContext || window.webkitAudioContext)();
+ const ctx = window.__mbChimeContext || new (window.AudioContext || window.webkitAudioContext)();
+  window.__mbChimeContext = ctx;
+  if (ctx.state === 'suspended') ctx.resume();
  const now = ctx.currentTime;
  [0, 0.4, 0.8].forEach((offset, i) => {
  const osc = ctx.createOscillator();
@@ -313,47 +272,19 @@
  } catch (e) { /* Web Audio unsupported — silently skip the chime */ }
  }
 
- function fadeOutAndStopAudio(durationMs) {
- const audio = document.getElementById('med-audio');
- if (audio.paused) return;
- const steps = 20;
- const stepTime = durationMs / steps;
- const startVolume = audio.volume;
- let i = 0;
- const fade = setInterval(() => {
- i++;
- audio.volume = Math.max(0, startVolume * (1 - i / steps));
- if (i >= steps) {
- clearInterval(fade);
- audio.pause();
- audio.volume = startVolume; // reset for next play
- }
- }, stepTime);
- }
-
  function onTimerComplete() {
- const sleepMode = document.getElementById('sleep-mode-toggle').checked;
- const card = document.getElementById('timer-card');
+  const card = document.getElementById('timer-card');
+  playChime();
+  card.classList.add('timer-ring-flash');
+  setTimeout(() => card.classList.remove('timer-ring-flash'), 1900);
+  showToast('Time\'s up! 🔔', 'Your meditation timer has finished. Take a slow breath and gently return.', 'success');
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification('Mind Bloom 🌿', { body: 'Your meditation timer has finished. Take a slow breath and gently return.' }); } catch (e) {}
+  }
+  document.getElementById('inp-duration').value = Math.round(timerTotal / 60);
+}
 
- if (sleepMode) {
- fadeOutAndStopAudio(4000);
- showToast('Winding down 🌙', 'Music is fading out — sleep well.', 'info');
- } else {
- playChime();
- card.classList.add('timer-ring-flash');
- setTimeout(() => card.classList.remove('timer-ring-flash'), 1900);
- showToast('Time\'s up! 🔔', 'Your meditation timer has finished.', 'success');
- if ('Notification' in window && Notification.permission === 'granted') {
- try { new Notification('Mind Bloom 🌿', { body: "Your meditation timer has finished." }); } catch (e) {}
- }
- }
- // Pre-fill the log form with this session's length either way
- document.getElementById('inp-duration').value = Math.round(timerTotal / 60);
- }
-
- document.getElementById('timer-display').textContent = formatTime(timerSeconds);
-
- // ── Consistency heatmap ──
+// ── Consistency heatmap ──
  const heatmapData = {{ heatmap | tojson }};
  const heatmapEl = document.getElementById('med-heatmap');
  heatmapData.forEach(day => {
@@ -416,7 +347,7 @@
  item.className = 'med-history-item';
  item.innerHTML = `<span class="mh-vibe">${selectedVibe}</span><span>${data.duration_minutes} min</span><span style="color:var(--text-light);font-size:0.75rem;">${data.logged_at}</span>`;
  history.prepend(item);
- resetStopwatch();
+
  document.getElementById('inp-duration').value = '';
  document.getElementById('inp-med-note').value = '';
  document.querySelectorAll('.vibe-opt').forEach(o => o.classList.remove('active'));
