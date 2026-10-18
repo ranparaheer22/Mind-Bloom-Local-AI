@@ -418,12 +418,13 @@
  : { video: { facingMode: 'user' }, audio: mode === 'video' };
 
  try {
+ if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { throw new Error('Microphone/camera access is unavailable in this browser context. Open the HTTPS website in a supported browser or update the Android app.'); }
  recStream = await navigator.mediaDevices.getUserMedia(constraints);
  } catch (err) {
  const deviceWord = mode === 'audio' ? 'microphone' : 'camera';
  document.getElementById('recorder-permission-msg').style.display = 'block';
  document.getElementById('recorder-permission-msg').textContent =
- `Couldn't access your ${deviceWord} (permission denied or unavailable). You can still use the Upload button instead.`;
+ `${err && err.message && err.message.includes('unavailable in this browser context') ? err.message : `Couldn't access your ${deviceWord}. Allow ${deviceWord} permission in your browser/app settings and try again.`} You can still use Upload instead.`;
  primaryBtn.style.display = 'none';
  return;
  }
@@ -599,11 +600,13 @@
  } else if (recMode === 'audio' && recBlob) {
  // Filename extension drives server-side classification — .weba is in the audio set
  // regardless of the recorder's actual webm/ogg container, which browsers handle fine by MIME type.
- const file = new File([recBlob], `voice-note-${stamp}.weba`, { type: recBlob.type || 'audio/webm' });
+ const audioMime = (recBlob.type || 'audio/webm').toLowerCase();
+ const audioExt = audioMime.includes('mp4') ? 'm4a' : audioMime.includes('ogg') ? 'ogg' : 'weba';
+ const file = new File([recBlob], `voice-note-${stamp}.${audioExt}`, { type: recBlob.type || 'audio/webm' });
  pendingFiles.push(file);
  const div = document.createElement('div');
  div.className = 'media-thumb';
- div.innerHTML = `<div class="audio-thumb">🎙</div>`;
+ div.innerHTML = `<audio controls preload="metadata" src="${URL.createObjectURL(recBlob)}" aria-label="Recorded voice note preview"></audio>`;
  preview.appendChild(div);
  }
 

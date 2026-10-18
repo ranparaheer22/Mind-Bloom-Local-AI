@@ -62,7 +62,7 @@ from models import (
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY') or os.urandom(32)
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)  # how long "Keep me logged in" lasts
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=3650)  # long-lived remembered login; ends when user logs out or clears app/browser data
 
 # ── DATABASE CONFIG ──
 db_url = os.environ.get('DATABASE_URL', 'sqlite:///mindbloom.db')
@@ -195,11 +195,13 @@ with app.app_context():
         db.session.commit()
 
     update_title = 'Mind Bloom update: Memories, language, themes & companion'
-    if not FeatureAnnouncement.query.filter_by(title=update_title).first():
-        db.session.add(FeatureAnnouncement(
-            icon='🌿', title=update_title,
-            message='Journal PIN lock retired; dashboard weather retained; age-aware exercise suggestions and daily tree growth; clearer sign-up/login; meditation countdown timer with optional looping background music; global English/Hindi/Gujarati language and Light/Dark theme settings; Video Companion and multilingual chat improvements; monthly and annual Memories; Habits and Gratitude Log removed; dashboard theme toggle removed.'
-        ))
+    update_message = 'Dashboard weather, age-aware exercise suggestions, daily tree growth, clearer sign-up/login, meditation countdown with calming background music, Light/Dark theme settings, Video Companion and multilingual chat improvements, and monthly/annual Memories.'
+    existing_update = FeatureAnnouncement.query.filter_by(title=update_title).first()
+    if not existing_update:
+        db.session.add(FeatureAnnouncement(icon='🌿', title=update_title, message=update_message))
+        db.session.commit()
+    elif 'Journal PIN' in (existing_update.message or '') or 'dashboard theme toggle removed' in (existing_update.message or ''):
+        existing_update.message = update_message
         db.session.commit()
 
     # One-time cleanup: merge any duplicate (user_id, checkin_date) rows that may have been
@@ -793,11 +795,15 @@ def generate_pdf_response(title, subtitle, story_rows, filename):
 # ── CORE / QUIZ PAGES (unchanged) ──
 @app.route('/')
 def index():
+    if session.get('user_id'):
+        return redirect(url_for('dashboard'))
     return render_template('index.html')
 
 
 @app.route('/login')
 def login():
+    if session.get('user_id'):
+        return redirect(url_for('dashboard'))
     return render_template('login.html')
 
 
@@ -952,6 +958,8 @@ def api_register():
 # ── AUTH: SIGN IN (returning users) ──
 @app.route('/signin', methods=['GET'])
 def signin():
+    if session.get('user_id'):
+        return redirect(url_for('dashboard'))
     return render_template('signin.html')
 
 

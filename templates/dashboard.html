@@ -287,11 +287,19 @@
  <span>Weekly digest</span>
  <input type="checkbox" id="weekly-digest-toggle" {{ 'checked' if weekly_digest_enabled else '' }} onchange="savePreferences()"/>
  </div>
- <a class="drawer-link" href="/journal/lock">🔒 Journal PIN lock</a>
+ <div class="settings-row">
+ <label for="theme-select">Appearance</label>
+ <select id="theme-select" onchange="savePreferences()">
+ <option value="light" {{ 'selected' if theme == 'light' else '' }}>☀️ Light mode</option>
+ <option value="dark" {{ 'selected' if theme == 'dark' else '' }}>🌙 Dark mode</option>
+ </select>
+ </div>
  </div>
 
  <script src="/static/js/main.js"></script>
  <script>
+ // Keep this account's saved theme in sync with the account preference.
+ (function(){ const savedTheme = {{ theme|tojson }}; document.documentElement.classList.toggle('dark-mode', savedTheme === 'dark'); try { localStorage.setItem('mb_theme', savedTheme); } catch(e) {} })();
  // ── Date/weather widget ──
  function weatherCodeToIcon(code) {
  if (code === 0) return { icon: '☀️', label: 'Clear' };
@@ -341,12 +349,14 @@
  function savePreferences() {
  const hourVal = document.getElementById('reminder-hour-select').value;
  const digestOn = document.getElementById('weekly-digest-toggle').checked;
+ const themeSelect = document.getElementById('theme-select');
+ const theme = themeSelect ? themeSelect.value : (document.documentElement.classList.contains('dark-mode') ? 'dark' : 'light');
  fetch('/api/settings/preferences', {
  method: 'POST', headers: { 'Content-Type': 'application/json' },
- body: JSON.stringify({ reminder_hour: hourVal === '' ? null : hourVal, weekly_digest_enabled: digestOn })
+ body: JSON.stringify({ reminder_hour: hourVal === '' ? null : hourVal, weekly_digest_enabled: digestOn, theme })
  })
  .then(r => r.json())
- .then(data => { if (data.success) showToast('Saved ', 'Preferences updated.', 'success'); });
+ .then(data => { if (data.success) { document.documentElement.classList.toggle('dark-mode', theme === 'dark'); try { localStorage.setItem('mb_theme', theme); } catch(e) {} const icon = document.getElementById('theme-fab-icon'); if (icon) icon.textContent = theme === 'dark' ? '☀️' : '🌙'; showToast('Saved ', 'Preferences updated.', 'success'); } });
  }
 
  // ── Notifications panel ──
