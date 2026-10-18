@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Chat companion — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ .chat-intro { background: var(--sage-50); border-radius: var(--radius-lg); padding: 16px 18px; margin-bottom: 16px; font-size: 0.84rem; color: var(--text-dark); line-height: 1.5; }
+ .search-row { display: flex; gap: 8px; margin-bottom: 14px; }
+ .search-row input { flex: 1; }
+ .session-card {
+ background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-md);
+ padding: 14px 16px; margin-bottom: 10px; text-decoration: none; display: flex;
+ justify-content: space-between; align-items: center; gap: 10px;
+ }
+ .session-card .sc-icon { font-size: 1.3rem; flex-shrink: 0; }
+ .session-card .sc-title { font-weight: 600; color: var(--text-dark); font-size: 0.9rem; }
+ .session-card .sc-date { font-size: 0.72rem; color: var(--text-light); margin-top: 2px; }
+ .session-delete { background: none; border: none; color: var(--text-light); font-size: 1rem; cursor: pointer; flex-shrink: 0; }
+
+ /* New-chat picker modal */
+ .picker-backdrop { position: fixed; inset: 0; background: rgba(20,30,20,0.5); z-index: 60; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+ .picker-backdrop.open { opacity: 1; pointer-events: auto; }
+ .picker-modal {
+ position: fixed; left: 50%; bottom: 0; transform: translate(-50%, 100%);
+ width: 100%; max-width: 430px; background: var(--surface); border-radius: 20px 20px 0 0;
+ z-index: 61; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); padding: 22px 20px 30px;
+ }
+ .picker-modal.open { transform: translate(-50%, 0); }
+ .picker-title { font-family: 'Josefin Sans', sans-serif; font-size: 1.2rem; color: var(--sage-700); text-align: center; margin-bottom: 4px; }
+ .picker-sub { text-align: center; font-size: 0.82rem; color: var(--text-light); margin-bottom: 18px; }
+ .picker-options { display: flex; gap: 12px; }
+ .picker-option {
+ flex: 1; background: var(--sage-50); border: 2px solid transparent; border-radius: var(--radius-md);
+ padding: 18px 12px; text-align: center; cursor: pointer;
+ }
+ .picker-option .po-icon { font-size: 2rem; margin-bottom: 6px; }
+ .picker-option .po-label { font-weight: 700; color: var(--text-dark); font-size: 0.88rem; }
+ .picker-option .po-desc { font-size: 0.72rem; color: var(--text-light); margin-top: 3px; }
+ .picker-option:hover, .picker-option:active { border-color: var(--sage-400); }
+ .picker-back { text-align: center; margin-top: 14px; font-size: 0.82rem; color: var(--sage-600); cursor: pointer; }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="app-shell">
+ <div class="app-topbar">
+ <span class="app-topbar-title">Chat companion 💬</span>
+ <a class="app-topbar-action" href="/dashboard" style="color:var(--text-light);">← Home</a>
+ </div>
+
+ <div class="app-content">
+ <div class="chat-intro">
+ 💬 A supportive space to talk through how you're feeling. This is an AI companion, not a licensed
+ therapist — for anything urgent, use the 🆘 button below.
+ </div>
+
+ <button class="btn btn-primary w-full" onclick="openPicker()">+ New conversation</button>
+
+ <form class="search-row mt-3" method="get" action="/chat">
+ <input class="form-input" type="text" name="q" value="{{ search }}" placeholder="Search past conversations…"/>
+ <button class="btn btn-outline btn-sm" type="submit">Search</button>
+ </form>
+
+ <div id="session-list">
+ {% if sessions %}
+ {% for s in sessions %}
+ <a class="session-card" href="/chat/{{ s.id }}">
+ <span class="sc-icon">
+ {% if s.bot_type == 'video' %}📹{% elif s.bot_type == 'doctor' %}{{ '👨\u200d⚕️' if s.doctor_gender == 'male' else '👩\u200d⚕️' }}{% else %}🌿{% endif %}
+ </span>
+ <div style="flex:1;">
+ <div class="sc-title">{{ s.title }}</div>
+ <div class="sc-date">{{ s.updated_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+ </div>
+ <button class="session-delete" onclick="event.preventDefault();deleteSession({{ s.id }}, this)">✕</button>
+ </a>
+ {% endfor %}
+ {% else %}
+ <div class="empty-hint">
+ {% if search %}No conversations match "{{ search }}"{% else %}No conversations yet — tap "+ New conversation" to start 🌱{% endif %}
+ </div>
+ {% endif %}
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+ </div>
+
+ <!-- New chat picker: step 1 = type, step 2 = doctor gender -->
+ <div class="picker-backdrop" id="picker-backdrop" onclick="closePicker()"></div>
+ <div class="picker-modal" id="picker-modal">
+ <div id="picker-step-type">
+ <div class="picker-title">Who would you like to talk to?</div>
+ <div class="picker-sub">Both are AI, not licensed professionals — pick whichever feels right.</div>
+ <div class="picker-options">
+ <div class="picker-option" onclick="chooseType('companion')">
+ <div class="po-icon">🌿</div>
+ <div class="po-label">Companion</div>
+ <div class="po-desc">A caring listener</div>
+ </div>
+ <div class="picker-option" onclick="showGenderStep()">
+ <div class="po-icon">🩺</div>
+ <div class="po-label">Doctor</div>
+ <div class="po-desc">Calm, reassuring</div>
+ </div>
+ </div>
+ </div>
+ <div id="picker-step-gender" style="display:none;">
+ <div class="picker-title">Choose your doctor</div>
+ <div class="picker-sub">Pick whichever gender feels most comfortable to talk to.</div>
+ <div class="picker-options">
+ <div class="picker-option" onclick="chooseType('doctor', 'male')">
+ <div class="po-icon">👨‍⚕️</div>
+ <div class="po-label">Dr. Arjun</div>
+ <div class="po-desc">Male</div>
+ </div>
+ <div class="picker-option" onclick="chooseType('doctor', 'female')">
+ <div class="po-icon">👩‍⚕️</div>
+ <div class="po-label">Dr. Priya</div>
+ <div class="po-desc">Female</div>
+ </div>
+ </div>
+ <div class="picker-back" onclick="showTypeStep()">← Back</div>
+ </div>
+ </div>
+
+ <script src="/static/js/main.js"></script>
+ <script>
+ function openPicker() {
+ showTypeStep();
+ document.getElementById('picker-backdrop').classList.add('open');
+ document.getElementById('picker-modal').classList.add('open');
+ }
+ function closePicker() {
+ document.getElementById('picker-backdrop').classList.remove('open');
+ document.getElementById('picker-modal').classList.remove('open');
+ }
+ function showTypeStep() {
+ document.getElementById('picker-step-type').style.display = 'block';
+ document.getElementById('picker-step-gender').style.display = 'none';
+ }
+ function showGenderStep() {
+ document.getElementById('picker-step-type').style.display = 'none';
+ document.getElementById('picker-step-gender').style.display = 'block';
+ }
+ function chooseType(botType, doctorGender) {
+ fetch('/api/chat/new', {
+ method: 'POST', headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ bot_type: botType, doctor_gender: doctorGender || null })
+ })
+ .then(r => r.json())
+ .then(data => { if (data.success) navigateTo(`/chat/${data.session_id}`); });
+ }
+ function deleteSession(id, btn) {
+ if (!confirm('Delete this conversation? This cannot be undone.')) return;
+ fetch(`/api/chat/${id}/delete`, { method: 'POST' })
+ .then(r => r.json())
+ .then(data => { if (data.success) btn.closest('.session-card').remove(); });
+ }
+ </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Sleep tracker — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+ <style>
+ .sleep-card { background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-lg); padding: 20px; margin-bottom: 16px; box-shadow: 0 8px 24px rgba(90,138,90,0.08); }
+ .time-row { display: flex; gap: 10px; }
+ .time-row .form-group { flex: 1; }
+ .quality-row { display: flex; gap: 8px; margin-top: 4px; }
+ .quality-opt { flex: 1; text-align: center; padding: 10px; border-radius: 10px; border: 1px solid var(--sage-100); background: var(--sage-50); cursor: pointer; font-size: 0.85rem; }
+ .quality-opt.active { background: var(--sage-500); color: white; border-color: var(--sage-500); }
+ .sleep-history-item { display: flex; justify-content: space-between; background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-md); padding: 10px 14px; margin-bottom: 8px; font-size: 0.85rem; }
+ .avg-banner { background: var(--sage-50); border-radius: var(--radius-md); padding: 12px 16px; text-align: center; margin-bottom: 16px; font-size: 0.88rem; color: var(--sage-700); font-weight: 600; }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="app-shell">
+ <div class="app-topbar">
+ <span class="app-topbar-title">Sleep 😴</span>
+ <a class="app-topbar-action" href="/dashboard" style="color:var(--text-light);">← Home</a>
+ </div>
+
+ <div class="app-content">
+ {% if avg_duration %}
+ <div class="avg-banner">💤 Averaging {{ avg_duration }} hours a night recently</div>
+ {% endif %}
+
+ {% if trend_values|length >= 2 %}
+ <div class="sleep-card">
+ <canvas id="sleep-trend-chart" height="140"></canvas>
+ </div>
+ {% endif %}
+
+ <div class="sleep-card">
+ <h3 style="font-size:0.95rem;font-weight:700;color:var(--sage-700);margin-bottom:12px;">Log last night</h3>
+ <div class="time-row">
+ <div class="form-group">
+ <label class="form-label">Bedtime</label>
+ <input class="form-input" type="time" id="inp-bedtime" value="{{ today_log.bedtime if today_log else '' }}"/>
+ </div>
+ <div class="form-group">
+ <label class="form-label">Wake time</label>
+ <input class="form-input" type="time" id="inp-waketime" value="{{ today_log.wake_time if today_log else '' }}"/>
+ </div>
+ </div>
+ <div class="form-group">
+ <label class="form-label">Sleep quality</label>
+ <div class="quality-row" id="quality-row">
+ <span class="quality-opt" data-q="Poor">Poor</span>
+ <span class="quality-opt" data-q="Okay">Okay</span>
+ <span class="quality-opt" data-q="Good">Good</span>
+ </div>
+ </div>
+ <div class="form-group">
+ <input class="form-input" id="inp-sleep-note" maxlength="200" placeholder="Any note? (optional)" value="{{ today_log.note if today_log else '' }}"/>
+ </div>
+ <button class="btn btn-primary w-full" id="sleep-save-btn" onclick="saveSleep()">
+ {{ 'Update' if today_log else 'Save' }}
+ </button>
+ </div>
+
+ <div class="section-title">Recent nights</div>
+ <div id="sleep-history">
+ {% if history %}
+ {% for h in history %}
+ <div class="sleep-history-item">
+ <span>{{ h.log_date.strftime('%d %b') }}</span>
+ <span>{{ h.bedtime or '–' }} → {{ h.wake_time or '–' }}</span>
+ <span>{{ h.duration_hours ~ 'h' if h.duration_hours else '–' }}</span>
+ <span>{{ h.quality or '' }}</span>
+ </div>
+ {% endfor %}
+ {% else %}
+ <div class="empty-hint">No sleep logs yet — add last night above 🌙</div>
+ {% endif %}
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+ </div>
+
+ <script src="/static/js/main.js"></script>
+ <script>
+ let selectedQuality = {{ (today_log.quality if today_log else None) | tojson }};
+ document.querySelectorAll('.quality-opt').forEach(el => {
+ if (el.dataset.q === selectedQuality) el.classList.add('active');
+ el.addEventListener('click', () => {
+ document.querySelectorAll('.quality-opt').forEach(o => o.classList.remove('active'));
+ el.classList.add('active');
+ selectedQuality = el.dataset.q;
+ });
+ });
+
+ function saveSleep() {
+ if (!selectedQuality) {
+ showToast('Hey! ', 'Pick a sleep quality.', 'warn');
+ return;
+ }
+ const btn = document.getElementById('sleep-save-btn');
+ btn.disabled = true;
+ fetch('/api/sleep', {
+ method: 'POST', headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({
+ bedtime: document.getElementById('inp-bedtime').value,
+ wake_time: document.getElementById('inp-waketime').value,
+ quality: selectedQuality,
+ note: document.getElementById('inp-sleep-note').value.trim()
+ })
+ })
+ .then(r => r.json())
+ .then(data => {
+ btn.disabled = false;
+ if (!data.success) { showToast('Hmm ', data.error || 'Could not save.', 'error'); return; }
+ btn.textContent = 'Update';
+ showToast('Saved ', 'Sleep log recorded 🌙', 'success');
+ })
+ .catch(() => { btn.disabled = false; showToast('Hmm ', 'Could not reach the server.', 'error'); });
+ }
+
+ const sleepCanvas = document.getElementById('sleep-trend-chart');
+ if (sleepCanvas) {
+ new Chart(sleepCanvas.getContext('2d'), {
+ type: 'bar',
+ data: { labels: {{ trend_labels | tojson }}, datasets: [{ label: 'Hours slept', data: {{ trend_values | tojson }}, backgroundColor: '#84B59F' }] },
+ options: { responsive: true, plugins: { legend: { display: false } } }
+ });
+ }
+ </script>
+</body>
+</html>

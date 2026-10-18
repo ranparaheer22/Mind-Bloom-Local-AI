@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Journal locked — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ body { min-height: 100vh; display: flex; flex-direction: column; }
+ .mobile-frame { flex: 1; display: flex; flex-direction: column; }
+ .lock-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 40px 20px; }
+ .lock-card {
+ max-width: 360px; width: 100%; background: var(--surface); border-radius: 28px; padding: 36px 30px;
+ box-shadow: 0 16px 50px rgba(90,138,90,0.12); text-align: center;
+ }
+ .lock-icon { font-size: 2.6rem; margin-bottom: 6px; }
+ .lock-title { font-family: 'Josefin Sans', sans-serif; font-size: 1.5rem; color: var(--sage-700); }
+ .lock-sub { font-size: 0.85rem; color: var(--text-light); margin-top: 6px; margin-bottom: 22px; }
+ .pin-input {
+ font-size: 1.6rem; letter-spacing: 0.5rem; text-align: center; width: 100%;
+ padding: 12px; border-radius: 14px; border: 1px solid var(--sage-100); background: var(--sage-50);
+ }
+ .field-error { color: #e53935; font-size: 0.8rem; margin-top: 8px; display: none; }
+ </style>
+</head>
+<body class="has-shell">
+ <div class="mobile-frame">
+ <div class="lock-wrap">
+ <div class="lock-card">
+ {% if has_pin %}
+ <div class="lock-icon">🔒</div>
+ <div class="lock-title">Journal locked</div>
+ <div class="lock-sub">Enter your PIN to continue.</div>
+ <input class="pin-input" type="password" inputmode="numeric" maxlength="8" id="inp-pin" autofocus/>
+ <div class="field-error" id="pin-error">Incorrect PIN. Try again.</div>
+ <button class="btn btn-primary w-full mt-3" onclick="verifyPin()">Unlock</button>
+ <p style="font-size:0.78rem;color:var(--text-light);margin-top:14px;">
+ <a href="/dashboard" style="color:var(--sage-600);">← Back to dashboard</a>
+ </p>
+ {% else %}
+ <div class="lock-icon">🔐</div>
+ <div class="lock-title">Set a journal PIN</div>
+ <div class="lock-sub">Optional — protects only the Journal, not your whole account. At least 4 digits.</div>
+ <input class="pin-input" type="password" inputmode="numeric" maxlength="8" id="inp-pin" autofocus/>
+ <div class="field-error" id="pin-error">PIN must be at least 4 digits.</div>
+ <button class="btn btn-primary w-full mt-3" onclick="setupPin()">Save PIN</button>
+ <p style="font-size:0.78rem;color:var(--text-light);margin-top:14px;">
+ <a href="{{ next_path }}" style="color:var(--sage-600);">Skip for now →</a>
+ </p>
+ {% endif %}
+ </div>
+ </div>
+ </div>
+
+ <script src="/static/js/main.js"></script>
+ <script>
+ const nextPath = {{ (next_path or '/journal') | tojson }};
+
+ function verifyPin() {
+ const pin = document.getElementById('inp-pin').value;
+ fetch('/api/journal/lock/verify', {
+ method: 'POST', headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ pin })
+ })
+ .then(r => r.json())
+ .then(data => {
+ if (data.success) navigateTo(nextPath);
+ else document.getElementById('pin-error').style.display = 'block';
+ });
+ }
+
+ function setupPin() {
+ const pin = document.getElementById('inp-pin').value;
+ if (pin.length < 4 || !/^\d+$/.test(pin)) {
+ document.getElementById('pin-error').style.display = 'block';
+ return;
+ }
+ fetch('/api/journal/lock/setup', {
+ method: 'POST', headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ pin })
+ })
+ .then(r => r.json())
+ .then(data => {
+ if (data.success) navigateTo(nextPath);
+ });
+ }
+ </script>
+</body>
+</html>

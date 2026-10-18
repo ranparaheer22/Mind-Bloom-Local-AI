@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Dashboard — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+ <style>
+ .dash-greeting { font-family: 'Josefin Sans', sans-serif; font-size: 2rem; color: var(--sage-700); }
+ .dash-sub { color: var(--text-light); font-size: 0.92rem; margin-top: 4px; }
+
+ .date-weather-card {
+ display: flex; justify-content: space-between; align-items: center;
+ background: var(--sage-50); border-radius: var(--radius-md); padding: 14px 18px; margin-top: 18px;
+ }
+ .date-weather-card .dw-date { font-size: 0.85rem; font-weight: 600; color: var(--sage-700); }
+ .date-weather-card .dw-weather { font-size: 0.82rem; color: var(--text-light); }
+
+ .quick-grid {
+ display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+ gap: 14px; margin-top: 20px;
+ }
+ .quick-card {
+ background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--sage-100);
+ padding: 22px 18px; text-align: center; text-decoration: none; display: block;
+ box-shadow: 0 6px 20px rgba(90,138,90,0.08); transition: transform .15s ease;
+ }
+ .quick-card:hover { transform: translateY(-3px); }
+ .quick-card .icon { font-size: 1.8rem; margin-bottom: 8px; display: block; }
+ .quick-card .label { font-family: 'Quicksand', sans-serif; font-weight: 600; color: var(--sage-700); font-size: 0.95rem; }
+ .quick-card .desc { font-size: 0.78rem; color: var(--text-light); margin-top: 4px; }
+ .quick-card.disabled { opacity: 0.55; cursor: default; pointer-events: none; }
+ .badge-soon {
+ display: inline-block; font-size: 0.68rem; background: var(--sage-100); color: var(--sage-600);
+ padding: 2px 8px; border-radius: 10px; margin-top: 6px;
+ }
+ .stat-row { display: flex; gap: 12px; margin-top: 18px; }
+ .stat-card { flex: 1; background: var(--sage-50); border-radius: var(--radius-md); padding: 16px; text-align: center; }
+ .stat-num { font-size: 1.6rem; font-weight: 700; color: var(--sage-700); font-family: 'Josefin Sans', sans-serif; }
+ .stat-label { font-size: 0.75rem; color: var(--text-light); }
+
+ .entry-row {
+ background: var(--surface); border-radius: var(--radius-md); border: 1px solid var(--sage-100);
+ padding: 14px 18px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+ text-decoration: none;
+ }
+ .entry-row .entry-date { font-size: 0.78rem; color: var(--text-light); }
+ .entry-row .entry-title { color: var(--text-dark); font-weight: 600; margin-top: 2px; }
+
+ /* Quick check-in / deep analysis summary cards */
+ .summary-card {
+ background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-lg);
+ padding: 16px 18px; margin-bottom: 12px;
+ }
+ .summary-card .sc-head { display: flex; justify-content: space-between; align-items: center; }
+ .summary-card .sc-title { font-weight: 700; color: var(--sage-700); font-size: 0.92rem; }
+ .summary-card .sc-done-tag { font-size: 0.68rem; background: var(--sage-100); color: var(--sage-700); padding: 2px 9px; border-radius: 10px; }
+ .summary-card .sc-body { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+ .summary-chip { background: var(--sage-50); border-radius: 8px; padding: 6px 10px; font-size: 0.75rem; color: var(--text-dark); }
+ .summary-card .sc-cta { margin-top: 10px; }
+
+ /* Notification bell + panel */
+ .bell-btn { position: relative; background: none; border: none; font-size: 1.25rem; cursor: pointer; padding: 4px 6px; }
+ .bell-badge {
+ position: absolute; top: -2px; right: -2px; background: #e0685c; color: white;
+ font-size: 0.62rem; font-weight: 700; min-width: 16px; height: 16px; border-radius: 8px;
+ display: flex; align-items: center; justify-content: center; padding: 0 3px;
+ }
+ .notif-panel {
+ position: fixed; top: 0; right: 0; bottom: 0; width: 82%; max-width: 340px;
+ background: var(--surface); z-index: 41; transform: translateX(100%);
+ transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+ box-shadow: -8px 0 30px rgba(0,0,0,0.12); overflow-y: auto; padding: 20px 0 24px;
+ }
+ .notif-panel.open { transform: translateX(0); }
+ .notif-section-label {
+ font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em;
+ color: var(--text-light); padding: 14px 20px 6px;
+ }
+ .notif-item { padding: 10px 20px; border-bottom: 1px solid var(--sage-50); }
+ .notif-item .ni-icon { font-size: 1.1rem; margin-right: 6px; }
+ .notif-item .ni-title { font-size: 0.85rem; font-weight: 600; color: var(--text-dark); }
+ .notif-item .ni-msg { font-size: 0.78rem; color: var(--text-light); margin-top: 2px; }
+ .notif-item.reminder-item { cursor: pointer; }
+ .notif-item.reminder-item:hover { background: var(--sage-50); }
+ .notif-empty { padding: 14px 20px; color: var(--text-light); font-size: 0.82rem; }
+ .insight-card {
+ background: linear-gradient(135deg, var(--sage-500), var(--sage-600, var(--sage-500)));
+ color: white; border-radius: var(--radius-lg); padding: 16px 18px; margin: 18px 0;
+ font-size: 0.88rem; line-height: 1.4;
+ }
+ .insight-card .ic-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.85; margin-bottom: 4px; }
+ .mini-chart-card { background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-lg); padding: 14px; margin-bottom: 4px; }
+ .settings-row { padding: 12px 20px; border-bottom: 1px solid var(--sage-50); }
+ .settings-row label { font-size: 0.82rem; color: var(--text-dark); display: block; margin-bottom: 6px; }
+ .settings-row select { width: 100%; }
+ .settings-toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; }
+ .settings-toggle-row span { font-size: 0.82rem; color: var(--text-dark); }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="app-shell">
+ <div class="app-topbar">
+ <span class="app-topbar-title">🌿 Mind Bloom</span>
+ <div style="display:flex;align-items:center;gap:6px;">
+ <button class="bell-btn" onclick="openNotifPanel()" aria-label="Notifications">
+ 🔔
+ {% if unread_count and unread_count > 0 %}
+ <span class="bell-badge" id="bell-badge">{{ unread_count if unread_count <= 9 else '9+' }}</span>
+ {% endif %}
+ </button>
+ <a class="app-topbar-action" href="/logout">Logout 👋</a>
+ </div>
+ </div>
+
+ <div class="app-content">
+ <div class="dash-greeting">Hey, {{ user.name }} 🌿</div>
+ <div class="dash-sub">Here's your space to reflect, talk, and breathe.</div>
+
+ <div class="date-weather-card">
+ <span class="dw-date">📅 {{ today_date.strftime('%A, %d %B %Y') }}</span>
+ <span class="dw-weather" id="weather-widget">Loading weather…</span>
+ </div>
+
+ <div class="insight-card">
+ <div class="ic-label">Insight of the day</div>
+ {{ insight }}
+ </div>
+
+ <div class="mini-chart-card">
+ <canvas id="dash-mood-chart" height="90"></canvas>
+ </div>
+
+ <div class="stat-row">
+ <div class="stat-card">
+ <div class="stat-num">{{ entry_count }}</div>
+ <div class="stat-label">Journal entries</div>
+ </div>
+ </div>
+
+ <div class="quick-grid">
+ <a class="quick-card" href="/journal/new">
+ <span class="icon">📔</span>
+ <div class="label">Write today's entry</div>
+ <div class="desc">Text and photos</div>
+ </a>
+ <a class="quick-card" href="/journal">
+ <span class="icon">📖</span>
+ <div class="label">View journal</div>
+ <div class="desc">All your entries</div>
+ </a>
+ <a class="quick-card" href="/chat">
+ <span class="icon">💬</span>
+ <div class="label">Chat companion</div>
+ <div class="desc">Talk it through</div>
+ </a>
+ <a class="quick-card" href="/videobot">
+ <span class="icon">🎥</span>
+ <div class="label">Video companion</div>
+ <div class="desc">Speak or type with Ryan or Racheal</div>
+ </a>
+ <a class="quick-card" href="/gratitude">
+ <span class="icon">🙏</span>
+ <div class="label">Gratitude log</div>
+ <div class="desc">3 good things</div>
+ </a>
+ <a class="quick-card" href="/sleep">
+ <span class="icon">😴</span>
+ <div class="label">Sleep tracker</div>
+ <div class="desc">Bedtime & quality</div>
+ </a>
+ <a class="quick-card" href="/habits">
+ <span class="icon">✅</span>
+ <div class="label">Habits</div>
+ <div class="desc">Daily goals</div>
+ </a>
+ <a class="quick-card" href="/resources">
+ <span class="icon">📚</span>
+ <div class="label">Resources</div>
+ <div class="desc">Coping guides</div>
+ </a>
+ <a class="quick-card" href="/reflection">
+ <span class="icon">🪞</span>
+ <div class="label">Weekly reflection</div>
+ <div class="desc">Your week in review</div>
+ </a>
+ <a class="quick-card" href="/exercise">
+ <span class="icon">🏃</span>
+ <div class="label">Exercise</div>
+ <div class="desc">Move your body</div>
+ </a>
+ </div>
+
+ <div class="section-title">Today's quick check-in</div>
+ <div class="summary-card">
+ {% if today_checkin %}
+ <div class="sc-head">
+ <span class="sc-title">🌤 Answered today</span>
+ <span class="sc-done-tag">✓ Done</span>
+ </div>
+ <div class="sc-body">
+ <span class="summary-chip">Mood {{ today_checkin.mood }}</span>
+ <span class="summary-chip">Sleep: {{ today_checkin.sleep_quality }}</span>
+ <span class="summary-chip">Stress: {{ today_checkin.stress_level }}</span>
+ <span class="summary-chip">Energy: {{ today_checkin.energy_level }}</span>
+ </div>
+ {% else %}
+ <div class="sc-head">
+ <span class="sc-title">🌤 Not done yet today</span>
+ </div>
+ <div style="font-size:0.82rem;color:var(--text-light);margin-top:4px;">Four quick taps — takes about 15 seconds.</div>
+ <button class="btn btn-primary btn-sm sc-cta" onclick="navigateTo('/test/daily')">Take it now →</button>
+ {% endif %}
+ </div>
+
+ <div class="section-title">Deep analysis</div>
+ <div class="summary-card">
+ {% if latest_test %}
+ <div class="sc-head">
+ <span class="sc-title">🧭 {{ latest_test.condition }}</span>
+ <span class="sc-done-tag">{{ latest_test.created_at.strftime('%d %b %Y') }}</span>
+ </div>
+ <div class="sc-body">
+ <span class="summary-chip">GAD-7: {{ latest_test.anxiety_score }}</span>
+ <span class="summary-chip">PHQ-9: {{ latest_test.depression_score }}</span>
+ </div>
+ <button class="btn btn-outline btn-sm sc-cta" onclick="navigateTo('/test')">View full history →</button>
+ {% else %}
+ <div class="sc-head">
+ <span class="sc-title">🧭 No full assessment yet</span>
+ </div>
+ <div style="font-size:0.82rem;color:var(--text-light);margin-top:4px;">A short PHQ-9 / GAD-7 style assessment, scored automatically.</div>
+ <button class="btn btn-primary btn-sm sc-cta" onclick="navigateTo('/test')">Start assessment →</button>
+ {% endif %}
+ </div>
+
+ <div class="section-title">Recent journal entries</div>
+ {% if recent_entries %}
+ {% for e in recent_entries %}
+ <a class="entry-row" href="/journal/{{ e.id }}">
+ <div>
+ <div class="entry-title">{{ e.title or 'Untitled entry' }}</div>
+ <div class="entry-date">{{ e.entry_date.strftime('%d %b %Y') }}</div>
+ </div>
+ <span>{{ e.mood_tag or '' }}</span>
+ </a>
+ {% endfor %}
+ {% else %}
+ <div class="empty-hint">No entries yet — <a href="/journal/new" style="color:var(--sage-600);font-weight:600;">write your first one</a> 🌱</div>
+ {% endif %}
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+ </div>
+
+ <!-- Notifications panel -->
+ <div class="drawer-backdrop" id="notif-backdrop" onclick="closeNotifPanel()"></div>
+ <div class="notif-panel" id="notif-panel">
+ <div class="drawer-header">
+ <span class="drawer-title">Notifications</span>
+ <button class="drawer-close" onclick="closeNotifPanel()" aria-label="Close">✕</button>
+ </div>
+ <div class="notif-section-label">Reminders</div>
+ <div id="notif-reminders"><div class="notif-empty">Loading…</div></div>
+ <div class="notif-section-label">What's new</div>
+ <div id="notif-announcements"><div class="notif-empty">Loading…</div></div>
+
+ <div class="notif-section-label">Settings</div>
+ <div class="settings-row">
+ <label for="reminder-hour-select">Daily reminder time</label>
+ <select id="reminder-hour-select" onchange="savePreferences()">
+ <option value="">Off</option>
+ {% for h in range(24) %}
+ <option value="{{ h }}" {{ 'selected' if reminder_hour == h else '' }}>{{ '%02d:00' | format(h) }}</option>
+ {% endfor %}
+ </select>
+ </div>
+ <div class="settings-toggle-row">
+ <span>Weekly digest</span>
+ <input type="checkbox" id="weekly-digest-toggle" {{ 'checked' if weekly_digest_enabled else '' }} onchange="savePreferences()"/>
+ </div>
+ <a class="drawer-link" href="/journal/lock">🔒 Journal PIN lock</a>
+ </div>
+
+ <script src="/static/js/main.js"></script>
+ <script>
+ // ── Date/weather widget ──
+ function weatherCodeToIcon(code) {
+ if (code === 0) return { icon: '☀️', label: 'Clear' };
+ if ([1, 2, 3].includes(code)) return { icon: '⛅', label: 'Cloudy' };
+ if ([45, 48].includes(code)) return { icon: '🌫️', label: 'Foggy' };
+ if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code)) return { icon: '🌧️', label: 'Rainy' };
+ if ([71, 73, 75, 77, 85, 86].includes(code)) return { icon: '❄️', label: 'Snowy' };
+ if ([95, 96, 99].includes(code)) return { icon: '⛈️', label: 'Stormy' };
+ return { icon: '🌤️', label: 'Mild' };
+ }
+ function loadWeather() {
+ const el = document.getElementById('weather-widget');
+ if (!navigator.geolocation) { el.textContent = 'Weather unavailable'; return; }
+ navigator.geolocation.getCurrentPosition(
+ pos => {
+ const { latitude, longitude } = pos.coords;
+ fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code`)
+ .then(r => r.json())
+ .then(data => {
+ const temp = Math.round(data.current.temperature_2m);
+ const { icon, label } = weatherCodeToIcon(data.current.weather_code);
+ el.innerHTML = `${icon} ${temp}°C · ${label}`;
+ })
+ .catch(() => { el.textContent = 'Weather unavailable'; });
+ },
+ () => { el.textContent = 'Enable location for weather'; },
+ { timeout: 6000 }
+ );
+ }
+ loadWeather();
+
+ // ── Mini mood chart ──
+ new Chart(document.getElementById('dash-mood-chart').getContext('2d'), {
+ type: 'line',
+ data: {
+ labels: {{ mood_labels | tojson }},
+ datasets: [{ data: {{ mood_values | tojson }}, borderColor: '#84B59F', backgroundColor: 'rgba(132,181,159,0.15)', fill: true, spanGaps: true, tension: 0.35, pointRadius: 2 }]
+ },
+ options: {
+ responsive: true,
+ plugins: { legend: { display: false } },
+ scales: { y: { min: 1, max: 7, display: false }, x: { display: false } }
+ }
+ });
+
+ // ── Preferences ──
+ function savePreferences() {
+ const hourVal = document.getElementById('reminder-hour-select').value;
+ const digestOn = document.getElementById('weekly-digest-toggle').checked;
+ fetch('/api/settings/preferences', {
+ method: 'POST', headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ reminder_hour: hourVal === '' ? null : hourVal, weekly_digest_enabled: digestOn })
+ })
+ .then(r => r.json())
+ .then(data => { if (data.success) showToast('Saved ', 'Preferences updated.', 'success'); });
+ }
+
+ // ── Notifications panel ──
+ let notifLoaded = false;
+ function openNotifPanel() {
+ document.getElementById('notif-panel').classList.add('open');
+ document.getElementById('notif-backdrop').classList.add('open');
+ if (!notifLoaded) {
+ fetch('/api/notifications')
+ .then(r => r.json())
+ .then(data => {
+ notifLoaded = true;
+ const remWrap = document.getElementById('notif-reminders');
+ if (data.reminders && data.reminders.length) {
+ remWrap.innerHTML = data.reminders.map(r =>
+ `<div class="notif-item reminder-item" onclick="navigateTo('${r.link}')">
+ <span class="ni-icon">${r.icon}</span><span class="ni-title">${r.text}</span>
+ </div>`
+ ).join('');
+ } else {
+ remWrap.innerHTML = '<div class="notif-empty">You\'re all caught up for today 🌿</div>';
+ }
+
+ const annWrap = document.getElementById('notif-announcements');
+ if (data.announcements && data.announcements.length) {
+ annWrap.innerHTML = data.announcements.map(a =>
+ `<div class="notif-item">
+ <span class="ni-icon">${a.icon}</span><span class="ni-title">${a.title}</span>
+ <div class="ni-msg">${a.message || ''} — ${a.date}</div>
+ </div>`
+ ).join('');
+ } else {
+ annWrap.innerHTML = '<div class="notif-empty">Nothing new yet.</div>';
+ }
+
+ const badge = document.getElementById('bell-badge');
+ if (badge) badge.remove();
+ })
+ .catch(() => {
+ document.getElementById('notif-reminders').innerHTML = '<div class="notif-empty">Could not load reminders.</div>';
+ document.getElementById('notif-announcements').innerHTML = '';
+ });
+ }
+ }
+ function closeNotifPanel() {
+ document.getElementById('notif-panel').classList.remove('open');
+ document.getElementById('notif-backdrop').classList.remove('open');
+ }
+ </script>
+</body>
+</html>

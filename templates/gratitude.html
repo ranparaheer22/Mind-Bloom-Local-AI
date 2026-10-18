@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Gratitude — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ .grat-card { background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-lg); padding: 22px 20px; box-shadow: 0 8px 24px rgba(90,138,90,0.08); }
+ .grat-card h2 { font-family: 'Josefin Sans', sans-serif; color: var(--sage-700); font-size: 1.2rem; text-align: center; }
+ .grat-card .gc-sub { text-align: center; font-size: 0.85rem; color: var(--text-light); margin-top: 4px; margin-bottom: 18px; }
+ .grat-input-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+ .grat-num { width: 26px; height: 26px; border-radius: 50%; background: var(--sage-100); color: var(--sage-700); font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+ .grat-history-item { background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-md); padding: 12px 16px; margin-bottom: 8px; }
+ .grat-history-item .gh-date { font-size: 0.72rem; color: var(--text-light); margin-bottom: 4px; }
+ .grat-history-item ul { margin: 0; padding-left: 18px; font-size: 0.85rem; color: var(--text-dark); }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="app-shell">
+ <div class="app-topbar">
+ <span class="app-topbar-title">Gratitude 🙏</span>
+ <a class="app-topbar-action" href="/dashboard" style="color:var(--text-light);">← Home</a>
+ </div>
+
+ <div class="app-content">
+ <div class="grat-card">
+ <h2>What are 3 good things from today?</h2>
+ <div class="gc-sub">Small things count too.</div>
+
+ <div class="grat-input-row"><span class="grat-num">1</span><input class="form-input" id="grat-item1" maxlength="200" value="{{ today_entry.item1 if today_entry else '' }}" placeholder="A good thing…"/></div>
+ <div class="grat-input-row"><span class="grat-num">2</span><input class="form-input" id="grat-item2" maxlength="200" value="{{ today_entry.item2 if today_entry else '' }}" placeholder="Another good thing…"/></div>
+ <div class="grat-input-row"><span class="grat-num">3</span><input class="form-input" id="grat-item3" maxlength="200" value="{{ today_entry.item3 if today_entry else '' }}" placeholder="One more…"/></div>
+
+ <button class="btn btn-primary w-full mt-3" id="grat-save-btn" onclick="saveGratitude()">
+ {{ 'Update today\'s entry' if today_entry else 'Save' }}
+ </button>
+ </div>
+
+ <div class="section-title">Past entries</div>
+ <div id="grat-history">
+ {% if history %}
+ {% for h in history %}
+ <div class="grat-history-item">
+ <div class="gh-date">{{ h.entry_date.strftime('%d %b %Y') }}</div>
+ <ul>
+ {% if h.item1 %}<li>{{ h.item1 }}</li>{% endif %}
+ {% if h.item2 %}<li>{{ h.item2 }}</li>{% endif %}
+ {% if h.item3 %}<li>{{ h.item3 }}</li>{% endif %}
+ </ul>
+ </div>
+ {% endfor %}
+ {% else %}
+ <div class="empty-hint">No entries yet — start with today's 🌱</div>
+ {% endif %}
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+ </div>
+
+ <script src="/static/js/main.js"></script>
+ <script>
+ function saveGratitude() {
+ const item1 = document.getElementById('grat-item1').value.trim();
+ const item2 = document.getElementById('grat-item2').value.trim();
+ const item3 = document.getElementById('grat-item3').value.trim();
+ if (!item1 && !item2 && !item3) {
+ showToast('Hey! ', 'Add at least one good thing.', 'warn');
+ return;
+ }
+ const btn = document.getElementById('grat-save-btn');
+ btn.disabled = true;
+ fetch('/api/gratitude', {
+ method: 'POST', headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ item1, item2, item3 })
+ })
+ .then(r => r.json())
+ .then(data => {
+ btn.disabled = false;
+ if (!data.success) { showToast('Hmm ', data.error || 'Could not save.', 'error'); return; }
+ btn.textContent = "Update today's entry";
+ showToast('Saved ', 'Your gratitude entry is recorded 🌿', 'success');
+ })
+ .catch(() => { btn.disabled = false; showToast('Hmm ', 'Could not reach the server.', 'error'); });
+ }
+ </script>
+</body>
+</html>

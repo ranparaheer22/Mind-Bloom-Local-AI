@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Thank You — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ 
+ 
+ <style>
+ body { min-height: 100vh; }
+ .end-page {
+ min-height: 100vh;
+ padding: 90px 20px 80px;
+ position: relative;
+ overflow: hidden;
+ }
+ .end-inner { max-width: 680px; margin: 0 auto; }
+ /* Hero */
+ .end-hero {
+ text-align: center;
+ background: var(--surface);
+ border-radius: 32px;
+ padding: 56px 40px 44px;
+ box-shadow: 0 12px 50px rgba(90,138,90,0.14);
+ border: 1px solid var(--sage-100);
+ margin-bottom: 32px;
+ position: relative; overflow: hidden;
+ }
+ .end-hero::before {
+ content: ''; position: absolute; top:0; left:0; right:0;
+ height: 5px;
+ background: linear-gradient(90deg,var(--sage-400),var(--gold),var(--sage-600));
+ }
+ .end-logo { width: 80px; height: 80px; object-fit: contain; animation: float 3s ease-in-out infinite; }
+ .end-title {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 3rem; color: var(--sage-700);
+ margin-top: 16px; line-height: 1.1;
+ }
+ .end-msg {
+ font-size: 1.0rem; color: var(--text-mid);
+ line-height: 1.7; margin-top: 16px;
+ max-width: 480px; margin-left: auto; margin-right: auto;
+ }
+ /* Quotes */
+ .quotes-section { margin-bottom: 32px; }
+ .quotes-title {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 1.8rem; color: var(--sage-700);
+ margin-bottom: 20px; text-align: center;
+ }
+ .quote-card {
+ background: var(--surface); border-left: 4px solid var(--sage-400);
+ border-radius: var(--radius-md); padding: 24px 28px;
+ margin-bottom: 16px;
+ box-shadow: 0 4px 20px rgba(90,138,90,0.08);
+ position: relative; overflow: hidden;
+ animation: fadeInUp 0.6s ease both;
+ }
+ .quote-card::before {
+ content: '"'; font-family: 'Josefin Sans', sans-serif;
+ font-size: 6rem; color: var(--sage-100);
+ position: absolute; top: -10px; left: 12px; line-height: 1;
+ }
+ .qt { font-family:'Bebas Neue', cursive; letter-spacing:0.05em; font-size:1.2rem; color:var(--text-dark); line-height:1.6; }
+ .qa { font-size:0.82rem; color:var(--text-light); margin-top:10px; letter-spacing:0.05em; }
+
+ /* Surprise button */
+ .surprise-row { text-align: center; margin-bottom: 32px; }
+ .surprise-trigger {
+ display: inline-flex; align-items: center; gap: 10px;
+ padding: 18px 40px;
+ border-radius: 50px;
+ background: linear-gradient(135deg, var(--gold), #e8a840);
+ color: white; border: none; cursor: pointer;
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 1.3rem;
+ box-shadow: 0 6px 30px rgba(201,169,110,0.4);
+ transition: var(--transition);
+ animation: pulseCta 2s ease-in-out infinite;
+ }
+ .surprise-trigger:hover { transform: translateY(-3px) scale(1.03); }
+ @keyframes pulseCta {
+ 0%,100%{box-shadow:0 6px 30px rgba(201,169,110,0.4)}
+ 50%{box-shadow:0 10px 40px rgba(201,169,110,0.7)}
+ }
+
+ /* ── Surprise overlay ── */
+ .surprise-overlay {
+ position: fixed; inset: 0;
+ background: rgba(20,40,20,0.62);
+ backdrop-filter: blur(10px);
+ z-index: 500;
+ display: flex; align-items: center; justify-content: center;
+ padding: 16px;
+ opacity: 0; visibility: hidden;
+ transition: var(--transition);
+ }
+ .surprise-overlay.show { opacity: 1; visibility: visible; }
+
+ /* ── Flash Card ── */
+ .surprise-card {
+ position: relative;
+ max-width: 380px; width: 100%;
+ border-radius: 28px;
+ padding: 0;
+ overflow: hidden;
+ box-shadow: 0 28px 80px rgba(0,0,0,0.28);
+ animation: scaleIn 0.45s cubic-bezier(0.34,1.56,0.64,1) both;
+ }
+ /* top bar with brand + classification */
+ .sc-topbar {
+ display: flex; align-items: center; justify-content: space-between;
+ padding: 14px 20px;
+ }
+ .sc-brand {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 0.85rem; font-weight: 600;
+ letter-spacing: 0.08em; color: white; opacity: 0.9;
+ }
+ .sc-tag {
+ font-family: 'Quicksand', sans-serif;
+ font-size: 0.72rem; font-weight: 600;
+ letter-spacing: 0.1em; text-transform: uppercase;
+ background: rgba(255,255,255,0.22);
+ color: white;
+ border-radius: 50px; padding: 4px 12px;
+ border: 1px solid rgba(255,255,255,0.3);
+ }
+ /* card body */
+ .sc-body {
+ background: var(--surface);
+ padding: 32px 28px 24px;
+ }
+ .sc-greeting {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 2rem; font-weight: 700;
+ line-height: 1.1; margin-bottom: 20px;
+ }
+ .sc-suggestion {
+ font-family: 'Quicksand', sans-serif;
+ font-size: 0.97rem; color: var(--text-mid);
+ line-height: 1.75; margin-bottom: 24px;
+ }
+ .sc-divider {
+ height: 1px; background: var(--sage-100);
+ margin-bottom: 16px;
+ }
+ .sc-footer-text {
+ font-family: 'Quicksand', sans-serif;
+ font-size: 0.78rem; color: var(--text-light);
+ text-align: center;
+ }
+ /* download button */
+ .sc-download-btn {
+ display: flex; align-items: center; justify-content: center; gap: 8px;
+ width: 100%; margin-top: 20px;
+ padding: 13px 20px; border-radius: 50px; border: none;
+ font-family: 'Quicksand', sans-serif;
+ font-size: 0.9rem; font-weight: 600;
+ cursor: pointer; transition: var(--transition);
+ color: white;
+ }
+ .sc-download-btn:hover { transform: translateY(-2px); }
+ .sc-download-btn:active { transform: scale(0.96); }
+ /* close */
+ .sc-close {
+ position: absolute; top: 12px; right: 14px;
+ background: rgba(255,255,255,0.2); border: none;
+ width: 28px; height: 28px; border-radius: 50%;
+ font-size: 0.9rem; cursor: pointer; color: white;
+ display: flex; align-items: center; justify-content: center;
+ transition: background 0.2s;
+ }
+ .sc-close:hover { background: rgba(255,255,255,0.38); }
+
+ .confetti-container {
+ position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1;
+ }
+
+ /* Logout row */
+ .logout-row { text-align: center; margin-top: 40px; }
+
+ /* Floating petals */
+ .petal { position: fixed; font-size:1.2rem; opacity:0.15; pointer-events:none; animation: petalFall linear infinite; }
+ @keyframes petalFall {
+ 0%{transform:translateY(-20px) rotate(0);opacity:0}
+ 10%{opacity:0.15}
+ 90%{opacity:0.15}
+ 100%{transform:translateY(110vh) rotate(360deg);opacity:0}
+ }
+
+ @media(max-width:480px){
+ .end-title { font-size: 2.2rem; }
+ .end-hero { padding: 40px 24px; }
+ }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+ <div class="bg-pattern"></div>
+ <div class="app-shell">
+<nav class="topbar">
+ <div class="topbar-brand">
+ <img src="/static/images/logo.png" alt="Logo"/>
+ <span>Mind Bloom</span>
+ </div>
+ <div style="font-size:0.8rem;color:var(--text-light);">Step 7 of 7 </div>
+ </nav>
+
+ <!-- Floating petals -->
+ <div id="petals-bg"></div>
+
+ <div class="end-page">
+ <div class="end-inner">
+
+ <!-- Hero -->
+ <div class="end-hero anim-scaleIn">
+ <img src="/static/images/logo.png" class="end-logo" alt="Logo"/>
+ <h1 class="end-title">Thank You, <span id="end-name">Friend</span>! 🌿</h1>
+ <p class="end-msg">
+ We are deeply grateful that you chose <strong>Mind Bloom</strong> as your companion today. 
+ Your willingness to look inward takes incredible courage and self-love.<br><br>
+ We hope this journey brings you clarity, peace and the motivation to bloom in every way. 
+ Remember — you are never alone, and every step toward understanding yourself matters.
+ </p>
+ <div style="margin-top:24px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+ <span class="badge badge-sage">🌿 Self-Aware</span>
+ <span class="badge badge-gold">💙 Courageous</span>
+ <span class="badge badge-sage">💚 Blooming</span>
+ </div>
+ </div>
+
+ <!-- Quotes -->
+ <div class="quotes-section">
+ <h2 class="quotes-title anim-fadeInUp">Words to Carry With You</h2>
+ <div id="quotes-container"></div>
+ </div>
+
+ <!-- Surprise Button -->
+ <div class="surprise-row anim-fadeInUp delay-3">
+ <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:16px;">Something special is waiting for you… </p>
+ <button class="surprise-trigger" onclick="openSurprise()">
+ Open Your Surprise Gift
+ </button>
+ </div>
+
+ <!-- Dashboard + Logout -->
+ <div class="logout-row anim-fadeInUp delay-4" style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+ <button class="btn btn-primary btn-lg" onclick="navigateTo('/dashboard')">
+ 🌿 Go to your dashboard
+ </button>
+ <button class="btn btn-outline btn-lg" onclick="logout()">
+  Logout &amp; Return Home
+ </button>
+ </div>
+ </div>
+ </div>
+
+ <!-- Surprise overlay -->
+ <div class="surprise-overlay" id="surprise-overlay">
+ <div class="surprise-card" id="surprise-card">
+ <div class="confetti-container" id="confetti-container"></div>
+
+ <!-- Coloured top bar -->
+ <div class="sc-topbar" id="sc-topbar">
+ <span class="sc-brand">🌿 Mind Bloom</span>
+ <span class="sc-tag" id="sc-tag">No Condition</span>
+ <button class="sc-close" onclick="closeSurprise()">✕</button>
+ </div>
+
+ <!-- White card body -->
+ <div class="sc-body">
+ <div class="sc-greeting" id="sc-greeting">hey there 🌸</div>
+ <div class="sc-suggestion" id="sc-suggestion"></div>
+ <div class="sc-divider"></div>
+ <div class="sc-footer-text" id="sc-footer-text">made just for you, dude 🤍</div>
+ <button class="sc-download-btn" id="sc-download-btn" onclick="downloadCard()">
+ save this card 👀💾
+ </button>
+ </div>
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+</div>
+
+<script src="/static/js/main.js"></script>
+ <script>
+ const ALL_QUOTES = [
+ { text: "You don't have to be positive all the time. It's perfectly okay to feel sad, angry, annoyed, frustrated, scared, or anxious. Having feelings doesn't make you a negative person. It makes you human.", author: "Lori Deschene" },
+ { text: "Mental health is not a destination, but a process. It's about how you drive, not where you're going.", author: "Noam Shpancer" },
+ { text: "Self-care is not self-indulgence. Self-care is self-preservation.", author: "Audre Lorde" },
+ { text: "You are not your illness. You have an individual story to tell. You have a name, a history, a personality.", author: "Julian Seifter" },
+ { text: "What mental health needs is more sunlight, more candor, and more unashamed conversation.", author: "Glenn Close" },
+ { text: "There is hope, even when your brain tells you there isn't.", author: "John Green" },
+ { text: "Happiness can be found even in the darkest of times, if one only remembers to turn on the light.", author: "Albus Dumbledore" },
+ { text: "You yourself, as much as anybody in the entire universe, deserve your love and affection.", author: "Buddha" },
+ { text: "The greatest glory in living lies not in never falling, but in rising every time we fall.", author: "Nelson Mandela" },
+ { text: "In the middle of every difficulty lies opportunity.", author: "Albert Einstein" }
+ ];
+
+
+ window.addEventListener('DOMContentLoaded', () => {
+ const user = MB.get('user') || {};
+ const name = user.name || 'Friend';
+ document.getElementById('end-name').textContent = name;
+
+ // Render 3 random quotes
+ const shuffled = ALL_QUOTES.sort(() => 0.5 - Math.random()).slice(0, 3);
+ const qContainer = document.getElementById('quotes-container');
+ shuffled.forEach((q, i) => {
+ const el = document.createElement('div');
+ el.className = 'quote-card';
+ el.style.animationDelay = (i * 0.15) + 's';
+ el.innerHTML = `<div class="qt">${q.text}</div><div class="qa">— ${q.author}</div>`;
+ qContainer.appendChild(el);
+ });
+
+ // Petals
+ const petalsEl = document.getElementById('petals-bg');
+ ['','','🍃','🌿',''].forEach(p => {
+ for (let i = 0; i < 4; i++) {
+ const el = document.createElement('div');
+ el.className = 'petal';
+ el.textContent = p;
+ el.style.left = Math.random() * 100 + '%';
+ el.style.animationDuration = (10 + Math.random() * 8) + 's';
+ el.style.animationDelay = (Math.random() * 8) + 's';
+ petalsEl.appendChild(el);
+ }
+ });
+ });
+
+ function openSurprise() {
+   const user      = MB.get('user')      || {};
+   const name      = user.name           || 'Beautiful Soul';
+   const gender    = (user.gender || '').toLowerCase();
+   const condition = MB.get('condition') || 'No Condition';
+
+   // ── Colour tints per condition ──────────────────────────
+   const TINTS = {
+     'No Condition':       { bg:'#e8f5e9', topBg:'#4a7a4a', btn:'#4a7a4a' },
+     'Anxiety':            { bg:'#e3f2fd', topBg:'#3a6fa8', btn:'#3a6fa8' },
+     'Depression':         { bg:'#ede7f6', topBg:'#6a4a9a', btn:'#6a4a9a' },
+     'Stress':             { bg:'#fff3e0', topBg:'#c07830', btn:'#c07830' },
+     'Anxiety+Depression': { bg:'#ede8f5', topBg:'#5a4a8a', btn:'#5a4a8a' },
+   };
+   const tint = TINTS[condition] || TINTS['No Condition'];
+
+   // ── Gender-aware footer ──────────────────────────────────
+   const footerMap = {
+     male:   `made just for you, dude 🤍`,
+     female: `made just for you, gurl 🤍`,
+     other:  `made just for you 🤍`,
+   };
+   const footerTxt = footerMap[gender] || `made just for you 🤍`;
+
+   // ── Unique suggestions per condition ────────────────────
+   const SUGGESTIONS = {
+     'No Condition': [
+       `You've been showing up for yourself, and it shows. Keep this momentum — tiny daily habits compound into the life you're dreaming of. You're already doing something most people never do: paying attention. 🌿`,
+       `Your mental health is a garden in full bloom right now. Water it daily with rest, good people, and small joys. You're proof that self-care works. Don't stop here. 💚`,
+       `Not everyone gets to feel this balanced — cherish it. Use this clarity to build something, start something, or simply be something new. The world is open for you. 🌱`,
+     ],
+     'Anxiety': [
+       `Your mind works overtime because you care deeply — that's actually beautiful. Try this tonight: write down three things that are completely fine right now. Your nervous system needs evidence that the present is safe. 💙`,
+       `Anxiety often lies about the future. Ground yourself in what's real: take five slow breaths and name five things you can see around you. You're okay, right now, in this moment. 🌿`,
+       `Your worries are not predictions — they're your brain trying to protect you. Thank it, then redirect gently. A 10-minute walk outside can break the anxiety loop better than most things. Try it tomorrow morning. 💙`,
+     ],
+     'Depression': [
+       `On days when everything feels heavy, you don't need to do much — just do one thing. One glass of water. One song you love. One text to someone who gets you. Small acts add up to survival, and survival is everything. 💜`,
+       `Depression tells you nothing will feel good again. That's the illness talking, not the truth. Sunlight for 15 minutes tomorrow morning isn't a cure — but it's a start. And starts matter. 🌸`,
+       `You showed up today. You answered questions, you're still here. That takes strength most people don't see. Be gentle with yourself tonight — you deserve the same kindness you'd give a friend. 💜`,
+     ],
+     'Stress': [
+       `Your nervous system has been carrying a lot. Tonight, give it one thing: permission to rest. No productivity guilt allowed. You can't pour from an empty cup — refilling is the most responsible thing you can do. 🧡`,
+       `Chronic stress shrinks our world. Deliberately expand yours — even a short walk in a new direction, a new playlist, or cooking something different can signal to your brain that life has variety. 🌿`,
+       `You're not behind. You're not failing. You're a human being in a demanding world doing your best. That's enough. Make a list of three things you can remove or delegate this week — protect your energy fiercely. 🧡`,
+     ],
+     'Anxiety+Depression': [
+       `Two things can be true at once: this is hard, and you are handling it. You don't have to heal everything today. One small kindness to yourself — one meal, one rest, one honest conversation — is a victory worth celebrating. 💜`,
+       `When anxiety and low mood collide, routine becomes medicine. A consistent wake time, sunlight, and one connection per day are the three anchors that research consistently shows help. Start with just one. 💙`,
+       `You're navigating something genuinely complex, and you're still here. Please talk to someone you trust — a friend, a counsellor, anyone. You don't have to carry this alone, and reaching out is the bravest thing you can do. 🌸`,
+     ],
+   };
+
+   const pool = SUGGESTIONS[condition] || SUGGESTIONS['No Condition'];
+   const suggestion = pool[Math.floor(Math.random() * pool.length)];
+
+   // ── Populate card ──────────────────────────────────────
+   document.getElementById('sc-topbar').style.background = tint.topBg;
+   document.getElementById('sc-tag').textContent = condition;
+   document.getElementById('sc-greeting').textContent = `hey ${name} 🌸`;
+   document.getElementById('sc-greeting').style.color = tint.topBg;
+   document.getElementById('sc-suggestion').textContent = suggestion;
+   document.getElementById('sc-footer-text').textContent = footerTxt;
+
+   const dlBtn = document.getElementById('sc-download-btn');
+   dlBtn.style.background = tint.topBg;
+   dlBtn.style.boxShadow = `0 6px 20px ${tint.topBg}55`;
+
+   // Store for download
+   dlBtn._tint    = tint;
+   dlBtn._name    = name;
+   dlBtn._cond    = condition;
+   dlBtn._footer  = footerTxt;
+   dlBtn._suggest = suggestion;
+
+   document.getElementById('surprise-overlay').classList.add('show');
+
+   // Confetti
+   const conf = document.getElementById('confetti-container');
+   conf.innerHTML = '';
+   launchConfetti(conf);
+ }
+
+ function closeSurprise() {
+   document.getElementById('surprise-overlay').classList.remove('show');
+ }
+
+ async function downloadCard() {
+   const btn = document.getElementById('sc-download-btn');
+   const tint    = btn._tint    || { topBg:'#4a7a4a', btn:'#4a7a4a' };
+   const name    = btn._name    || 'You';
+   const cond    = btn._cond    || 'No Condition';
+   const footer  = btn._footer  || 'made just for you 🤍';
+   const suggest = btn._suggest || '';
+
+   // ── Draw card on a 2× canvas ─────────────────────────────
+   const W = 760, H = 960, PAD = 48;
+   const canvas = document.createElement('canvas');
+   canvas.width = W; canvas.height = H;
+   const ctx = canvas.getContext('2d');
+
+   // helper: rounded rect
+   function rr(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.arcTo(x+w,y,x+w,y+r,r); ctx.lineTo(x+w,y+h-r); ctx.arcTo(x+w,y+h,x+w-r,y+h,r); ctx.lineTo(x+r,y+h); ctx.arcTo(x,y+h,x,y+h-r,r); ctx.lineTo(x,y+r); ctx.arcTo(x,y,x+r,y,r); ctx.closePath(); }
+
+   // helper: wrap text, returns final y
+   function wrapText(text, x, y, maxW, lineH) {
+     const words = text.split(' ');
+     let line = '';
+     const lines = [];
+     for (const w of words) {
+       const test = line ? line + ' ' + w : w;
+       if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; }
+       else line = test;
+     }
+     if (line) lines.push(line);
+     lines.forEach((l,i) => ctx.fillText(l, x, y + i * lineH));
+     return y + lines.length * lineH;
+   }
+
+   // ── Card background ──────────────────────────────────────
+   rr(0,0,W,H,36); ctx.fillStyle = '#ffffff'; ctx.fill();
+
+   // ── Coloured top bar ─────────────────────────────────────
+   const topH = 160;
+   rr(0,0,W,topH,36); ctx.fillStyle = tint.topBg; ctx.fill();
+   // fix bottom corners of top bar
+   ctx.fillRect(0, topH-36, W, 36);
+
+   // Brand name
+   ctx.fillStyle = 'rgba(255,255,255,0.92)';
+   ctx.font = 'bold 32px "Arial", sans-serif';
+   ctx.textAlign = 'left';
+   ctx.fillText('🌿 Mind Bloom', PAD, 64);
+
+   // Condition tag pill
+   ctx.fillStyle = 'rgba(255,255,255,0.22)';
+   const tagW = ctx.measureText(cond).width + 44;
+   rr(PAD, 84, tagW, 38, 19); ctx.fill();
+   ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1.5;
+   rr(PAD, 84, tagW, 38, 19); ctx.stroke();
+   ctx.fillStyle = 'white';
+   ctx.font = 'bold 18px Arial';
+   ctx.textAlign = 'left';
+   ctx.fillText(cond, PAD + 22, 108);
+
+   // ── Card body ─────────────────────────────────────────────
+   let y = topH + 44;
+
+   // Greeting
+   ctx.fillStyle = tint.topBg;
+   ctx.font = 'bold 52px Georgia, serif';
+   ctx.textAlign = 'left';
+   ctx.fillText(`hey ${name} 🌸`, PAD, y);
+   y += 64;
+
+   // Thin rule
+   ctx.strokeStyle = '#e8f0e8'; ctx.lineWidth = 1.5;
+   ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W-PAD, y); ctx.stroke();
+   y += 36;
+
+   // Suggestion text
+   ctx.fillStyle = '#4a5e4a';
+   ctx.font = '26px Georgia, serif';
+   ctx.textAlign = 'left';
+   y = wrapText(suggest, PAD, y, W - PAD*2, 40) + 16;
+
+   // ── Footer ───────────────────────────────────────────────
+   const footerY = H - 100;
+   ctx.strokeStyle = '#e8f0e8'; ctx.lineWidth = 1.5;
+   ctx.beginPath(); ctx.moveTo(PAD, footerY); ctx.lineTo(W-PAD, footerY); ctx.stroke();
+
+   ctx.fillStyle = '#7a8e7a';
+   ctx.font = '22px Arial, sans-serif';
+   ctx.textAlign = 'center';
+   ctx.fillText(footer, W/2, footerY + 40);
+
+   // ── Download PNG ─────────────────────────────────────────
+   const link = document.createElement('a');
+   link.download = `MindBloom_Card_${name.replace(/[^a-zA-Z0-9]/g,'_')}.png`;
+   link.href = canvas.toDataURL('image/png');
+   link.click();
+
+   showToast('Saved! 💾', 'Your card has been downloaded.', 'success');
+ }
+
+ function logout() {
+ MB.clear();
+ navigateTo('/');
+ }
+ </script>
+</body>
+</html>

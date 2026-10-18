@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Weekly reflection — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ .refl-hero { text-align: center; margin-bottom: 18px; }
+ .refl-hero h2 { font-family: 'Josefin Sans', sans-serif; color: var(--sage-700); font-size: 1.3rem; }
+ .refl-hero p { font-size: 0.82rem; color: var(--text-light); margin-top: 4px; }
+ .refl-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 18px; }
+ .refl-stat { background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-md); padding: 14px; text-align: center; }
+ .refl-stat .rs-num { font-size: 1.3rem; font-weight: 700; color: var(--sage-700); font-family: 'Josefin Sans', sans-serif; }
+ .refl-stat .rs-label { font-size: 0.7rem; color: var(--text-light); }
+ .refl-section { background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-lg); padding: 16px 18px; margin-bottom: 14px; }
+ .refl-section h3 { font-size: 0.92rem; font-weight: 700; color: var(--sage-700); margin-bottom: 8px; }
+ .refl-entry-line { font-size: 0.85rem; color: var(--text-dark); padding: 6px 0; border-bottom: 1px solid var(--sage-50); }
+ .refl-question { font-size: 0.88rem; color: var(--text-dark); font-style: italic; padding: 8px 0; border-bottom: 1px solid var(--sage-50); }
+ .tag-pill-row { display: flex; gap: 6px; flex-wrap: wrap; }
+ .tag-pill { font-size: 0.72rem; background: var(--sage-50); color: var(--sage-700); padding: 4px 10px; border-radius: 10px; }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="app-shell">
+ <div class="app-topbar">
+ <span class="app-topbar-title">Weekly reflection 🪞</span>
+ <a class="app-topbar-action" href="/dashboard" style="color:var(--text-light);">← Home</a>
+ </div>
+
+ <div class="app-content">
+ <div class="refl-hero">
+ <h2>{{ week_start.strftime('%d %b') }} – {{ week_end.strftime('%d %b %Y') }}</h2>
+ <p>A gentle, non-clinical look back at your week.</p>
+ </div>
+
+ <div class="refl-stat-grid">
+ <div class="refl-stat"><div class="rs-num">{{ entries|length }}</div><div class="rs-label">Journal entries</div></div>
+ <div class="refl-stat"><div class="rs-num">{{ checkins|length }}/7</div><div class="rs-label">Daily check-ins</div></div>
+ <div class="refl-stat"><div class="rs-num">{{ med_sessions|length }}</div><div class="rs-label">Meditation sessions</div></div>
+ <div class="refl-stat"><div class="rs-num">{{ med_minutes }}</div><div class="rs-label">Minutes meditated</div></div>
+ </div>
+
+ {% if top_mood %}
+ <div class="refl-section">
+ <h3>Overall mood</h3>
+ <div style="font-size:1.6rem;">{{ top_mood }}</div>
+ <div style="font-size:0.82rem;color:var(--text-light);margin-top:4px;">Your most common mood this week.</div>
+ </div>
+ {% endif %}
+
+ {% if top_tags %}
+ <div class="refl-section">
+ <h3>Common themes</h3>
+ <div class="tag-pill-row">{% for t in top_tags %}<span class="tag-pill">#{{ t }}</span>{% endfor %}</div>
+ </div>
+ {% endif %}
+
+ {% if positive_entries %}
+ <div class="refl-section">
+ <h3>✨ Positive moments</h3>
+ {% for e in positive_entries[:5] %}
+ <div class="refl-entry-line">{{ e.entry_date.strftime('%d %b') }} — {{ e.title or (e.text_content[:60] if e.text_content else 'Untitled entry') }}</div>
+ {% endfor %}
+ </div>
+ {% endif %}
+
+ {% if difficult_entries %}
+ <div class="refl-section">
+ <h3>🌧 Harder moments</h3>
+ {% for e in difficult_entries[:5] %}
+ <div class="refl-entry-line">{{ e.entry_date.strftime('%d %b') }} — {{ e.title or (e.text_content[:60] if e.text_content else 'Untitled entry') }}</div>
+ {% endfor %}
+ </div>
+ {% endif %}
+
+ {% if not entries and not checkins and not med_sessions %}
+ <div class="empty-hint">Not much logged this week — that's alright, next week is a fresh start 🌱</div>
+ {% endif %}
+
+ <div class="refl-section">
+ <h3>To sit with</h3>
+ {% for q in reflection_questions %}
+ <div class="refl-question">{{ q }}</div>
+ {% endfor %}
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+ </div>
+
+ <script src="/static/js/main.js"></script>
+</body>
+</html>

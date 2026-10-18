@@ -1,0 +1,236 @@
+{% macro avatar(gender) %}
+<svg class="av-svg" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+ <g class="av-body">
+  <path d="M30 340 C30 272 82 246 150 246 C218 246 270 272 270 340 Z" fill="#5a8a5a"/>
+  <path d="M96 256 L150 340 L58 340 C60 298 74 270 96 256 Z" fill="#f6f8f6" stroke="#dbe5db" stroke-width="2"/>
+  <path d="M204 256 L150 340 L242 340 C240 298 226 270 204 256 Z" fill="#f6f8f6" stroke="#dbe5db" stroke-width="2"/>
+ </g>
+ {% if gender == 'female' %}
+ <path d="M84 150 C70 78 112 44 150 44 C188 44 230 78 216 150 C226 204 222 246 204 270 L96 270 C78 246 74 204 84 150 Z" fill="#3b2a20"/>
+ {% endif %}
+ <path d="M130 200 L130 250 Q150 268 170 250 L170 200 Z" fill="#dba982"/>
+ <path d="M118 262 C112 300 126 318 150 318 C174 318 188 300 182 262" fill="none" stroke="#3a3a3a" stroke-width="4" stroke-linecap="round"/>
+ <circle cx="150" cy="322" r="7" fill="#9aa5a0" stroke="#3a3a3a" stroke-width="2"/>
+ <g class="av-head">
+  <ellipse cx="94" cy="158" rx="9" ry="15" fill="#e3ad84"/>
+  <ellipse cx="206" cy="158" rx="9" ry="15" fill="#e3ad84"/>
+  <ellipse cx="150" cy="152" rx="57" ry="66" fill="#e8b892"/>
+  <ellipse cx="116" cy="178" rx="12" ry="7" fill="#f2a58e" opacity="0.35"/>
+  <ellipse cx="184" cy="178" rx="12" ry="7" fill="#f2a58e" opacity="0.35"/>
+  {% if gender == 'female' %}
+  <path d="M90 160 C80 84 116 60 150 60 C186 60 220 84 210 160 C206 124 186 96 162 90 C150 112 118 122 90 160 Z" fill="#3b2a20"/>
+  {% else %}
+  <path d="M92 142 C86 84 118 64 150 64 C184 64 214 84 208 142 C204 116 190 98 150 98 C112 98 96 116 92 142 Z" fill="#2f2118"/>
+  {% endif %}
+  <g class="brow" fill="none" stroke="#2a1d14" stroke-linecap="round" stroke-width="{{ '3.4' if gender == 'female' else '5' }}">
+   <path d="M110 {{ '131' if gender == 'female' else '130' }} Q124 {{ '119' if gender == 'female' else '122' }} 141 {{ '127' if gender == 'female' else '128' }}"/>
+   <path d="M159 {{ '127' if gender == 'female' else '128' }} Q176 {{ '119' if gender == 'female' else '122' }} 190 {{ '131' if gender == 'female' else '130' }}"/>
+  </g>
+  <ellipse cx="126" cy="154" rx="13.5" ry="9.5" fill="#fff"/>
+  <ellipse cx="174" cy="154" rx="13.5" ry="9.5" fill="#fff"/>
+  <g class="pupil-state">
+   <g>
+    
+    <circle cx="126" cy="154" r="6.4" fill="#4b3425"/><circle cx="126" cy="154" r="3.2" fill="#1b120c"/><circle cx="128.5" cy="151.5" r="1.9" fill="#fff"/>
+    <circle cx="174" cy="154" r="6.4" fill="#4b3425"/><circle cx="174" cy="154" r="3.2" fill="#1b120c"/><circle cx="176.5" cy="151.5" r="1.9" fill="#fff"/>
+   </g>
+  </g>
+  <rect x="111" y="143" width="31" height="0" rx="10" fill="#e8b892"></rect>
+  <rect x="159" y="143" width="31" height="0" rx="10" fill="#e8b892"></rect>
+  <g fill="none" stroke="#2a1d14" stroke-linecap="round" stroke-width="{{ '3.2' if gender == 'female' else '2.6' }}">
+   <path d="M112 152 Q126 142 140 152"/><path d="M160 152 Q174 142 188 152"/>
+   {% if gender == 'female' %}<path d="M113 150 L107 146"/><path d="M187 150 L193 146"/>{% endif %}
+  </g>
+  <path d="M147 170 Q143 186 150 189 Q157 186 153 170" fill="none" stroke="#c99a74" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="m-closed" d="M131 200 Q150 214 169 200" fill="none" stroke="{{ '#c0566b' if gender == 'female' else '#a24a35' }}" stroke-width="3.6" stroke-linecap="round"/>
+  <g class="m-open">
+   <ellipse cx="150" cy="205" rx="15" ry="9" fill="#5e1b18"/>
+   <ellipse cx="150" cy="210" rx="8.5" ry="3.8" fill="#d8666b"/>
+   <path d="M137 200 Q150 204 163 200" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+  </g>
+ </g>
+</svg>
+{% endmacro %}
+<!DOCTYPE html>
+<html lang="{{ session.get('language', 'en') }}" data-theme="{{ session.get('theme', 'light') }}">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Video companion — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ /* ── Avatar animation (shared by hub previews and the call) ── */
+ .av-svg { width: 100%; height: 100%; display: block; overflow: visible; }
+ /* Natural, lightweight human-like motion for the illustrated companions. */
+ .av-svg .av-body { transform-origin: 150px 300px; animation: avBreath 4.8s ease-in-out infinite; }
+ .av-svg .av-head { transform-box: view-box; transform-origin: 150px 170px; animation: avHead 7s ease-in-out infinite; }
+ .av-svg .m-open { opacity: 0; transform-origin: 150px 205px; animation: avIdleTalk 6.5s ease-in-out infinite; }
+ .av-svg .m-closed { animation: avClosedMouth 6.5s ease-in-out infinite; }
+ .av-svg .pupil-state { transform-origin: 150px 154px; animation: avGaze 9s ease-in-out infinite; }
+ .av-svg rect[x="111"] { transform-box: fill-box; transform-origin: center; animation: avBlink 5.4s infinite; }
+ .av-svg rect[x="159"] { transform-box: fill-box; transform-origin: center; animation: avBlink 5.4s infinite; }
+ @keyframes avBreath { 0%,100% { transform: translateY(0) scaleY(1); } 50% { transform: translateY(-2px) scaleY(1.012); } }
+ @keyframes avHead { 0%,100% { transform: rotate(0deg) translateY(0); } 24% { transform: rotate(-1.1deg) translateY(-1px); } 52% { transform: rotate(.8deg) translateY(0); } 78% { transform: rotate(-.4deg) translateY(-.5px); } }
+ @keyframes avIdleTalk { 0%,12%,18%,34%,39%,62%,67%,100% { opacity: 0; transform: scaleY(.65); } 14%,16%,36%,38%,64%,66% { opacity: 1; transform: scaleY(1); } }
+ @keyframes avClosedMouth { 0%,12%,18%,34%,39%,62%,67%,100% { opacity: 1; } 14%,16%,36%,38%,64%,66% { opacity: 0; } }
+ @keyframes avGaze { 0%,35%,43%,100% { transform: translateX(0); } 38%,41% { transform: translateX(2px); } }
+ @keyframes avBlink { 0%,46%,49%,100% { transform: scaleY(0); } 47.5% { transform: scaleY(1); } }
+ @media (prefers-reduced-motion: reduce) { .av-svg *, .avatar-halo { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; } }
+
+ /* ── Hub ── */
+ .vh-intro { background: var(--sage-50); border-radius: var(--radius-lg); padding: 16px 18px; font-size: .84rem; color: var(--text-dark); line-height: 1.5; margin-bottom: 16px; }
+ .vh-label { font-size: .78rem; font-weight: 700; color: var(--sage-700); margin: 14px 0 8px; }
+ .vp-row { display: flex; gap: 12px; }
+ .vp-card { flex: 1; background: var(--surface); border: 2px solid var(--sage-100); border-radius: var(--radius-lg); padding: 12px 8px 10px; text-align: center; cursor: pointer; }
+ .vp-card.active { border-color: var(--sage-500); background: var(--sage-50); }
+ .vp-avatar { width: 92px; height: 104px; margin: 0 auto 6px; }
+ .vp-name { font-weight: 700; color: var(--text-dark); font-size: .9rem; }
+ .vp-sub { font-size: .72rem; color: var(--text-light); }
+ .vh-hint { display: none; margin-top: 10px; font-size: .78rem; color: var(--text-dark); background: var(--sage-50); border-radius: var(--radius-md); padding: 10px 12px; line-height: 1.45; }
+ .vh-note { font-size: .74rem; color: var(--text-light); line-height: 1.5; margin-top: 14px; }
+ .ended-card { display: none; margin-top: 14px; background: var(--sage-50); border-radius: var(--radius-lg); padding: 14px 16px; font-size: .85rem; color: var(--text-dark); text-align: center; }
+ .ended-card a { display: inline-block; margin-top: 8px; color: var(--sage-600); font-weight: 700; text-decoration: none; }
+
+ /* ── Call screen (always dark, like a real call) ── */
+ .call-screen { position: fixed; inset: 0; z-index: 90; background: #0b1510; display: none; justify-content: center; }
+ .call-screen.open { display: flex; }
+ .call-inner { position: relative; width: 100%; max-width: 430px; height: 100vh; height: 100dvh; display: flex; flex-direction: column; background: linear-gradient(180deg, #1d3a2d 0%, #163025 55%, #10241b 100%); color: #eaf2ea; overflow: hidden; }
+ .call-top { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px 4px; }
+ .call-name { font-weight: 700; font-size: 1.02rem; }
+ .call-status { font-size: .78rem; color: #9fc2a8; margin-top: 2px; }
+ .call-meta { display: flex; align-items: center; gap: 10px; }
+ .call-timer { font-size: .8rem; color: #9fc2a8; font-variant-numeric: tabular-nums; }
+ .help-btn { background: #d9534f; color: #fff; border: none; border-radius: 14px; padding: 6px 11px; font-size: .78rem; font-weight: 700; cursor: pointer; }
+ .stage { position: relative; flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+ .avatar-halo { position: absolute; width: min(78vw, 310px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(132,181,159,.38), rgba(132,181,159,0) 68%); animation: haloPulse 4s ease-in-out infinite; } @keyframes haloPulse { 0%,100% { transform: scale(.98); opacity: .75; } 50% { transform: scale(1.06); opacity: 1; } }
+ .avatar-box { position: relative; width: min(70vw, 280px); max-height: 100%; aspect-ratio: 300 / 340; cursor: pointer; }
+ .self-view { position: absolute; top: 8px; right: 12px; width: 84px; height: 112px; border-radius: 14px; overflow: hidden; border: 2px solid rgba(255,255,255,.35); background: #000; display: none; }
+ .self-view video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+ .tap-hint { position: absolute; bottom: 6px; left: 0; right: 0; text-align: center; font-size: .7rem; color: #7ea88a; }
+ .captions { padding: 8px 18px 4px; min-height: 84px; max-height: 26vh; overflow-y: auto; }
+ .cap-you { font-size: .8rem; color: #9fc2a8; font-style: italic; margin-bottom: 4px; min-height: 1em; }
+ .cap-doc { font-size: .98rem; line-height: 1.45; color: #fff; max-height: 20vh; overflow-y: auto; }
+ .type-bar { display: none; gap: 8px; padding: 6px 16px; }
+ .type-bar.open { display: flex; }
+ .type-bar input { flex: 1; border-radius: 16px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.1); color: #fff; padding: 10px 14px; font-size: .9rem; }
+ .type-bar input::placeholder { color: #9fc2a8; }
+ .type-bar button { border: none; border-radius: 50%; width: 42px; height: 42px; background: #5a8a5a; color: #fff; font-size: 1.1rem; cursor: pointer; }
+ .call-controls { display: flex; justify-content: center; gap: 16px; padding: 10px 16px calc(18px + env(safe-area-inset-bottom, 0px)); }
+ .ctl { width: 54px; height: 54px; border-radius: 50%; border: none; background: rgba(255,255,255,.16); color: #fff; font-size: 1.3rem; cursor: pointer; }
+ .ctl.off { background: rgba(255,255,255,.06); opacity: .75; }
+ .ctl.mic-active { background: #5a8a5a; box-shadow: 0 0 0 6px rgba(90,138,90,.3); }
+ .ctl.end { background: #d9534f; }
+ .ctl.retry { width: auto; min-width: 90px; padding: 0 16px; border-radius: 28px; background: #5a8a5a; font-size: .9rem; }
+ .help-panel { position: absolute; left: 12px; right: 12px; top: 56px; background: #fdf1ef; color: #5c2a22; border-radius: 16px; padding: 14px; z-index: 5; display: none; box-shadow: 0 12px 40px rgba(0,0,0,.45); max-height: 70%; overflow-y: auto; }
+ .help-panel.open { display: block; }
+ .help-panel h3 { font-size: .95rem; margin-bottom: 4px; color: #a33a2b; }
+ .help-panel p { font-size: .78rem; margin-bottom: 8px; }
+ .help-row { background: #fff; border: 1px solid #f3c8c1; border-radius: 10px; padding: 8px 10px; margin-bottom: 6px; }
+ .hr-name { font-weight: 700; font-size: .8rem; color: #a33a2b; }
+ .hr-num { font-weight: 700; font-size: 1rem; color: #c0392b; }
+ .hr-num a { color: inherit; text-decoration: none; }
+ .hr-note { font-size: .7rem; color: #7a5a55; }
+ .help-close { margin-top: 6px; background: none; border: none; color: #a33a2b; font-weight: 700; cursor: pointer; font-size: .8rem; }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="app-shell">
+ <div class="app-topbar">
+ <span class="app-topbar-title">Video companion 🎥</span>
+ <a class="app-topbar-action" href="/dashboard" style="color:var(--text-light);">← Home</a>
+ </div>
+
+ <div class="app-content">
+ <div class="vh-intro">
+ Talk with your animated AI companion. Choose Racheal or Ryan, then speak or type naturally. Your companion responds to what you actually say, with captions and spoken replies. They are AI personas, not licensed professionals. If you are in danger,
+ use the red Help button during the call or the 🆘 button anywhere in the app.
+ </div>
+
+ <div class="vh-label">Who would you like to talk to?</div>
+ <div class="vp-row">
+ <div class="vp-card" data-gender="female" role="button" tabindex="0">
+ <div class="vp-avatar">{{ avatar('female') }}</div>
+ <div class="vp-name">{{ personas['female'].name }}</div><div class="vp-sub">Female</div>
+ </div>
+ <div class="vp-card" data-gender="male" role="button" tabindex="0">
+ <div class="vp-avatar">{{ avatar('male') }}</div>
+ <div class="vp-name">{{ personas['male'].name }}</div><div class="vp-sub">Male</div>
+ </div>
+ </div>
+ <div class="vh-hint" id="voice-hint"></div>
+
+ <button class="btn btn-primary w-full mt-3" id="start-call-btn">▶ Start animated chat</button>
+
+ <div class="ended-card" id="ended-card">
+ Call ended · <span id="ended-time">00:00</span><br/>
+ Your animated companion uses your existing Mind Bloom Gemini wellness chat.
+ </div>
+
+ <div class="vh-note">
+ 🔒 Your messages use your existing Mind Bloom chat service. Speech input and speech playback depend on browser support. Camera preview, if enabled, stays local and is not uploaded.
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+ </div>
+
+ <!-- Call screen -->
+ <div class="call-screen" id="call-screen">
+ <div class="call-inner">
+ <div class="call-top">
+ <div>
+ <div class="call-name" id="call-name">Racheal</div>
+ <div class="call-status" id="call-status" aria-live="polite">Connecting…</div>
+ </div>
+ <div class="call-meta">
+ <span class="call-timer" id="call-timer">00:00</span>
+ <button class="help-btn" id="btn-help" aria-label="Show emergency helplines">🆘 Help</button>
+ </div>
+ </div>
+
+ <div class="help-panel" id="help-panel" role="dialog" aria-label="Emergency helplines">
+ <h3>You don't have to face this alone</h3>
+ <p>If you are in immediate danger, call emergency services now. These helplines are free and confidential.</p>
+ <div id="help-list"></div>
+ <button class="help-close" id="help-close">Close</button>
+ </div>
+
+ <div class="stage state-connecting" id="stage">
+ <div class="avatar-halo"></div>
+ <div class="avatar-box" id="avatar-box" aria-label="Animated AI companion">{{ avatar('female') }}</div>
+ <div class="self-view" id="self-view"><video id="self-video" autoplay muted playsinline></video></div>
+ <div class="tap-hint">Your animated companion</div>
+ </div>
+
+ <div class="captions" aria-live="polite">
+ <div class="cap-you" id="cap-you"></div>
+ <div class="cap-doc" id="cap-doc"></div>
+ </div>
+
+ <div class="type-bar" id="type-bar">
+ <input id="type-input" type="text" placeholder="Type your message…" autocomplete="off" aria-label="Type your message"/>
+ <button id="type-send" aria-label="Send">➤</button>
+ </div>
+
+ <div class="call-controls">
+ <button class="ctl" id="btn-mic" aria-label="Mute microphone">🎤</button>
+ <button class="ctl off" id="btn-cam" aria-label="Toggle camera">📷</button>
+ <button class="ctl" id="btn-keyboard" aria-label="Type instead">⌨️</button>
+ <button class="ctl retry" id="btn-retry" style="display:none" aria-label="Restart animated chat">Retry</button>
+ <button class="ctl end" id="btn-end" aria-label="End call">📞</button>
+ </div>
+ </div>
+ </div>
+
+ <script src="/static/js/main.js"></script>
+ <script>window.MB_VIDEO = { crisis: {{ crisis_resources | tojson }} };</script>
+ <script src="/static/js/video_call.js?v=reply-timeout-fix-1"></script>
+</body>
+</html>

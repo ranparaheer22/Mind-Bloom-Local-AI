@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ body { background: var(--cream); }
+ .hero {
+ min-height: 100vh;
+ display: flex; align-items: center; justify-content: center;
+ padding: 32px 16px;
+ }
+ .hero-card {
+ max-width: 520px; width: 100%;
+ background: rgba(255,255,255,0.88);
+ backdrop-filter: blur(16px);
+ border-radius: 32px;
+ padding: 48px 40px;
+ box-shadow: 0 16px 60px rgba(90,138,90,0.14);
+ border: 1px solid rgba(168,200,168,0.35);
+ text-align: center;
+ }
+ .logo-wrap {
+ position: relative;
+ display: inline-block;
+ margin-bottom: 24px;
+ }
+ .logo-wrap img {
+ width: 110px; height: 110px;
+ object-fit: contain;
+ animation: float 4s ease-in-out infinite;
+ }
+ .logo-glow {
+ position: absolute; inset: -12px;
+ border-radius: 50%;
+ background: radial-gradient(circle, rgba(122,170,122,0.2), transparent 70%);
+ animation: glowPulse 3s ease-in-out infinite;
+ }
+ @keyframes glowPulse {
+ 0%,100%{opacity:0.5;transform:scale(1)}
+ 50%{opacity:1;transform:scale(1.08)}
+ }
+ .app-name {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 3rem; font-weight: 400;
+ color: var(--sage-700);
+ letter-spacing: 0.1em;
+ line-height: 1;
+ }
+ .slogan {
+ font-family: 'Quicksand', sans-serif;
+ font-style: italic;
+ font-size: 1.05rem;
+ color: var(--gold);
+ margin-top: 6px;
+ letter-spacing: 0.04em;
+ }
+ .motive {
+ font-size: 0.9rem;
+ color: var(--text-light);
+ line-height: 1.7;
+ margin-top: 14px;
+ padding: 0 8px;
+ }
+ .section-label {
+ font-size: 0.72rem;
+ text-transform: uppercase;
+ letter-spacing: 0.14em;
+ color: var(--text-light);
+ margin-top: 28px;
+ margin-bottom: 12px;
+ }
+ .mood-row {
+ display: flex; gap: 10px; flex-wrap: wrap;
+ justify-content: center;
+ margin-top: 8px;
+ }
+ .mood-pill { min-width: 72px; }
+ .selected-mood-text {
+ margin-top: 12px;
+ font-size: 0.88rem;
+ color: var(--sage-600);
+ min-height: 20px;
+ font-style: italic;
+ }
+ .next-row {
+ margin-top: 28px;
+ display: flex; justify-content: center;
+ }
+ .leaves-bg {
+ position: fixed; inset: 0; z-index: -1;
+ overflow: hidden; pointer-events: none;
+ }
+ .leaf {
+ position: absolute;
+ font-size: 1.4rem;
+ opacity: 0.12;
+ animation: leafDrift linear infinite;
+ }
+ @keyframes leafDrift {
+ 0%{transform:translateY(-20px) rotate(0deg);opacity:0}
+ 10%{opacity:0.12}
+ 90%{opacity:0.12}
+ 100%{transform:translateY(110vh) rotate(360deg);opacity:0}
+ }
+ </style>
+</head>
+<body>
+ <!-- Loader -->
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <!-- Background leaves -->
+ <div class="leaves-bg" id="leaves-bg"></div>
+ <div class="bg-pattern"></div>
+
+ <div class="mobile-frame">
+ <div class="hero">
+ <div class="hero-card">
+ <!-- Logo + single top emoji -->
+ <div class="logo-wrap anim-fadeIn">
+ <div class="logo-glow"></div>
+ <img src="/static/images/logo.png" alt="Mind Bloom Logo"/>
+ </div>
+
+ <!-- App Name & Slogan -->
+ <div class="app-name anim-fadeInUp delay-1">Mind Bloom</div>
+ <div class="slogan anim-fadeInUp delay-2">Read the mind. Begin the bloom.</div>
+
+ <!-- Motive -->
+ <p class="motive anim-fadeInUp delay-3">
+ Mind Bloom is your gentle companion on the journey to emotional self-awareness. 
+ Answer a few thoughtful questions and discover insights about your mental wellbeing — 
+ because understanding yourself is the first step to blooming.
+ </p>
+
+ <!-- Divider -->
+ <div class="divider anim-fadeIn delay-4">
+ <div class="divider-text">Language / भाषा / ભાષા</div>
+ </div>
+
+ <!-- Language Selector -->
+ <div class="lang-selector anim-fadeInUp delay-4">
+ <button class="lang-btn active" data-lang="en" onclick="selectLang('en',this)">🌐 English</button>
+ <button class="lang-btn" data-lang="hi" onclick="selectLang('hi',this)">🇮🇳 हिंदी</button>
+ <button class="lang-btn" data-lang="gu" onclick="selectLang('gu',this)"> ગુજરાતી</button>
+ </div>
+
+ <!-- How are you feeling -->
+ <div class="section-label anim-fadeIn delay-5" id="feeling-label">How are you feeling right now?</div>
+ <div class="mood-row anim-fadeInUp delay-5">
+ <div class="mood-pill" onclick="selectMood(this,'🌟','Amazing!')" data-mood="amazing">
+ <span class="mood-emoji">🌟</span>
+ <span id="mood-label-amazing">Amazing</span>
+ </div>
+ <div class="mood-pill" onclick="selectMood(this,'🌿','Pretty good!')" data-mood="good">
+ <span class="mood-emoji">🌿</span>
+ <span id="mood-label-good">Good</span>
+ </div>
+ <div class="mood-pill" onclick="selectMood(this,'🍃','Just okay…')" data-mood="okay">
+ <span class="mood-emoji">🍃</span>
+ <span id="mood-label-okay">Okay</span>
+ </div>
+ <div class="mood-pill" onclick="selectMood(this,'🌧','A bit low…')" data-mood="low">
+ <span class="mood-emoji">🌧</span>
+ <span id="mood-label-low">Low</span>
+ </div>
+ <div class="mood-pill" onclick="selectMood(this,'💙','Sad today')" data-mood="sad">
+ <span class="mood-emoji">💙</span>
+ <span id="mood-label-sad">Sad</span>
+ </div>
+ <div class="mood-pill" onclick="selectMood(this,'🌀','Stressed!')" data-mood="stressed">
+ <span class="mood-emoji">🌀</span>
+ <span id="mood-label-stressed">Stressed</span>
+ </div>
+ <div class="mood-pill" onclick="selectMood(this,'🌱','Anxious…')" data-mood="anxious">
+ <span class="mood-emoji">🌱</span>
+ <span id="mood-label-anxious">Anxious</span>
+ </div>
+ </div>
+ <div class="selected-mood-text" id="mood-msg"></div>
+
+ <!-- Next Button -->
+ <div class="next-row anim-fadeInUp delay-6">
+ <button class="btn btn-primary btn-lg" onclick="goNext()">
+ <span data-t="next">Next →</span>
+ </button>
+ </div>
+
+ <p style="font-size:0.75rem;color:var(--text-light);margin-top:16px;" class="anim-fadeIn delay-7">
+ 🔒 Your information is always private &amp; secure
+ </p>
+ <p style="font-size:0.82rem;color:var(--text-light);margin-top:10px;" class="anim-fadeIn delay-7">
+ Already have an account? <a href="/signin" style="color:var(--sage-600);font-weight:600;">Log in</a>
+ </p>
+ </div>
+ </div>
+ </div>
+
+ <script src="/static/js/main.js"></script>
+ <script>
+ // Generate floating leaves
+ const leavesEl = document.getElementById('leaves-bg');
+ ['🍃','🌿','🍀','🌱'].forEach((leaf, i) => {
+ for (let j = 0; j < 5; j++) {
+ const el = document.createElement('div');
+ el.className = 'leaf';
+ el.textContent = leaf;
+ el.style.left = Math.random() * 100 + '%';
+ el.style.animationDuration = (12 + Math.random() * 10) + 's';
+ el.style.animationDelay = (Math.random() * 10) + 's';
+ el.style.fontSize = (1 + Math.random() * 1.2) + 'rem';
+ leavesEl.appendChild(el);
+ }
+ });
+
+ function selectLang(lang, btn) {
+ MB.set('lang', lang);
+ document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+ btn.classList.add('active');
+ applyLanguage();
+ updateMoodLabels(lang);
+ }
+
+ function updateMoodLabels(lang) {
+ const labels = {
+ en: ['Amazing','Good','Okay','Low','Sad','Stressed','Anxious'],
+ hi: ['अद्भुत','अच्छा','ठीक','उदास','दुखी','तनावग्रस्त','चिंतित'],
+ gu: ['અદ્ભુત','સારુ','ઠીક','ઉદાસ','દુ:ખી','તણાવ','ચિંતિત']
+ };
+ const keys = ['amazing','good','okay','low','sad','stressed','anxious'];
+ const cur = labels[lang] || labels.en;
+ keys.forEach((k,i) => {
+ const el = document.getElementById('mood-label-'+k);
+ if (el) el.textContent = cur[i];
+ });
+ }
+
+ let selectedMoodEmoji = '';
+ function selectMood(el, emoji, msg) {
+ document.querySelectorAll('.mood-pill').forEach(p => p.classList.remove('active'));
+ el.classList.add('active');
+ selectedMoodEmoji = emoji;
+ MB.set('mood', emoji);
+ document.getElementById('mood-msg').textContent = msg + ' We are here for you 💚';
+ }
+
+ function goNext() {
+ if (!MB.get('mood')) {
+ showToast('Hey there! ', 'Please let us know how you feel first!', 'warn');
+ return;
+ }
+ navigateTo('/login');
+ }
+
+ // Set saved lang on load
+ window.addEventListener('DOMContentLoaded', () => {
+ const saved = MB.get('lang') || 'en';
+ document.querySelectorAll('.lang-btn').forEach(b => {
+ b.classList.toggle('active', b.dataset.lang === saved);
+ });
+ updateMoodLabels(saved);
+ });
+ </script>
+</body>
+</html>

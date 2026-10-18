@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>GAD-7 Anxiety Test — Mind Bloom</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ .gad-page { min-height: 100vh; padding: 90px 20px 60px; }
+ .gad-inner { max-width: 620px; margin: 0 auto; }
+
+ .gad-header { text-align: center; margin-bottom: 36px; }
+ .gad-title {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 2.4rem; color: var(--sage-700); letter-spacing: 0.02em;
+ }
+ .gad-info {
+ background: var(--sage-50);
+ border-radius: var(--radius-md);
+ padding: 16px 20px;
+ font-size: 0.86rem; color: var(--text-mid);
+ line-height: 1.65; margin-top: 14px;
+ border-left: 4px solid var(--sage-400);
+ }
+
+ .prog-row {
+ display: flex; align-items: center; gap: 12px;
+ margin-bottom: 18px;
+ }
+ .prog-label { font-size: 0.76rem; color: var(--text-light); white-space: nowrap; min-width: 160px; }
+
+ /* Dot indicators */
+ .dot-row {
+ display: flex; justify-content: center; gap: 7px;
+ margin-bottom: 22px;
+ }
+ .dot {
+ width: 8px; height: 8px; border-radius: 50%;
+ background: var(--sage-200); transition: var(--transition);
+ cursor: pointer;
+ }
+ .dot.answered { background: var(--sage-400); }
+ .dot.current { background: var(--sage-600); width: 24px; border-radius: 4px; }
+
+ /* Question card */
+ .q-slide { display: none; animation: fadeInUp 0.4s ease both; }
+ .q-slide.active { display: block; }
+
+ .qcard-wrap {
+ background: var(--surface);
+ border-radius: 28px;
+ padding: 44px 40px 36px;
+ box-shadow: 0 8px 40px rgba(90,138,90,0.11);
+ border: 1px solid var(--sage-100);
+ position: relative; overflow: hidden;
+ }
+ .qcard-wrap::before {
+ content: '';
+ position: absolute; top: 0; left: 0; right: 0; height: 4px;
+ background: linear-gradient(90deg, var(--sage-400), var(--sage-600));
+ }
+ .q-num-bg {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 7rem; font-weight: 300;
+ color: var(--sage-100);
+ position: absolute; top: 8px; right: 24px;
+ line-height: 1; user-select: none; pointer-events: none;
+ }
+ .q-counter {
+ font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em;
+ text-transform: uppercase; color: var(--sage-500);
+ margin-bottom: 14px;
+ }
+ .q-title {
+ font-family: 'Quicksand', sans-serif;
+ font-size: 1.22rem; color: var(--text-dark);
+ line-height: 1.65; margin-bottom: 28px;
+ position: relative; z-index: 1; max-width: 440px;
+ }
+
+ .option-list { display: flex; flex-direction: column; gap: 9px; }
+ .opt-btn {
+ display: flex; align-items: center; gap: 13px;
+ padding: 13px 17px;
+ border: 1.5px solid var(--sage-200);
+ border-radius: 12px;
+ background: var(--sage-50);
+ cursor: pointer; transition: var(--transition);
+ font-size: 0.91rem; color: var(--text-dark); text-align: left;
+ width: 100%;
+ }
+ .opt-btn:hover {
+ border-color: var(--sage-400);
+ background: var(--sage-100);
+ transform: translateX(3px);
+ }
+ .opt-btn.selected {
+ border-color: var(--sage-500);
+ background: var(--sage-100);
+ color: var(--sage-700);
+ box-shadow: 0 0 0 3px rgba(90,138,90,0.1);
+ }
+ .opt-radio {
+ width: 18px; height: 18px; flex-shrink: 0;
+ border-radius: 50%;
+ border: 2px solid var(--sage-300);
+ background: var(--surface);
+ transition: var(--transition);
+ display: flex; align-items: center; justify-content: center;
+ }
+ .opt-btn.selected .opt-radio {
+ border-color: var(--sage-500);
+ background: var(--sage-500);
+ }
+ .opt-btn.selected .opt-radio::after {
+ content: '';
+ width: 7px; height: 7px;
+ border-radius: 50%;
+ background: var(--surface);
+ }
+ .opt-score-tag {
+ margin-left: auto; flex-shrink: 0;
+ font-size: 0.7rem; color: var(--text-light);
+ background: var(--sage-100);
+ padding: 2px 8px; border-radius: 50px;
+ }
+ .opt-btn.selected .opt-score-tag {
+ background: var(--sage-200); color: var(--sage-700);
+ }
+
+ /* Navigation buttons */
+ .q-nav {
+ display: flex; justify-content: space-between; align-items: center;
+ margin-top: 28px; gap: 12px;
+ }
+ .nav-btn {
+ display: inline-flex; align-items: center; gap: 8px;
+ padding: 13px 28px; border-radius: 50px;
+ font-family: 'Quicksand', sans-serif;
+ font-size: 0.88rem; font-weight: 500;
+ cursor: pointer; border: none; transition: var(--transition);
+ letter-spacing: 0.02em;
+ }
+ .nav-prev {
+ background: var(--sage-50); color: var(--sage-600);
+ border: 1.5px solid var(--sage-200);
+ }
+ .nav-prev:hover { background: var(--sage-100); border-color: var(--sage-400); transform: translateX(-2px); }
+ .nav-prev:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; }
+
+ .nav-next {
+ background: linear-gradient(135deg, var(--sage-500), var(--sage-600));
+ color: white;
+ box-shadow: 0 4px 16px rgba(90,138,90,0.28);
+ }
+ .nav-next:hover { transform: translateX(2px); box-shadow: 0 6px 22px rgba(90,138,90,0.38); }
+ .nav-next:disabled { opacity: 0.38; cursor: not-allowed; pointer-events: none; }
+
+ .q-hint {
+ font-size: 0.73rem; color: var(--text-light);
+ text-align: center; margin-top: 10px; min-height: 18px;
+ }
+
+ /* Result */
+ #gad-result { display: none; animation: scaleIn 0.5s ease both; }
+ .result-card {
+ background: var(--surface); border-radius: 28px;
+ padding: 52px 40px; text-align: center;
+ box-shadow: 0 8px 40px rgba(90,138,90,0.13);
+ border: 1px solid var(--sage-100);
+ position: relative; overflow: hidden;
+ }
+ .result-card::before {
+ content: ''; position: absolute; top:0; left:0; right:0; height:4px;
+ background: linear-gradient(90deg, var(--sage-400), var(--sage-600));
+ }
+ .result-score-big {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 5.5rem; color: var(--sage-600); line-height: 1;
+ }
+ .severity-track {
+ height: 8px; border-radius: 4px;
+ background: var(--sage-100); margin: 22px 0 6px;
+ overflow: hidden;
+ }
+ .severity-fill {
+ height: 100%; border-radius: 4px;
+ width: 0%; transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+ }
+
+ @media(max-width:480px){
+ .qcard-wrap { padding: 28px 20px 24px; }
+ .gad-title { font-size: 2rem; }
+ .q-nav { flex-wrap: wrap; }
+ .nav-btn { flex:1; justify-content:center; }
+ }
+ </style>
+</head>
+<body class="has-shell">
+
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt=""/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="bg-pattern"></div>
+
+ <div class="app-shell">
+<nav class="topbar">
+ <div class="topbar-brand">
+ <img src="/static/images/logo.png" alt=""/>
+ <span>Mind Bloom</span>
+ </div>
+ <div style="font-size:0.76rem;color:var(--text-light);letter-spacing:0.07em;">STEP 4 OF 7</div>
+ </nav>
+
+ <div class="gad-page">
+ <div class="gad-inner">
+
+ <!-- Header -->
+ <div class="gad-header anim-fadeInUp">
+ <div style="font-size:2rem;margin-bottom:10px;">🧠</div>
+ <h1 class="gad-title">Anxiety Score Test — GAD-7</h1>
+ <div class="gad-info">
+ <strong>Clinically Validated</strong> — The Generalized Anxiety Disorder-7 (GAD-7) is a 7-item, evidence-based self-test used to measure anxiety severity, developed in 2006. Your answers are completely private and secure.
+ </div>
+ </div>
+
+ <!-- Progress -->
+ <div class="prog-row">
+ <span class="prog-label" id="gad-prog-label">Question 1 of 7</span>
+ <div class="progress-bar" style="flex:1">
+ <div class="progress-fill" id="gad-prog" style="width:14%"></div>
+ </div>
+ </div>
+
+ <!-- Dot indicators -->
+ <div class="dot-row" id="gad-dots"></div>
+
+ <!-- Question container -->
+ <div id="gad-questions"></div>
+
+ <!-- Result -->
+ <div id="gad-result">
+ <div class="result-card">
+ <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--text-light);margin-bottom:6px;">Your Anxiety Score</div>
+ <div class="result-score-big" id="gad-res-score">0</div>
+ <div style="font-size:0.76rem;color:var(--text-light);letter-spacing:0.1em;text-transform:uppercase;margin-top:2px;">out of 21</div>
+
+ <div class="severity-track">
+ <div class="severity-fill" id="gad-sev-fill"></div>
+ </div>
+ <div style="display:flex;justify-content:space-between;font-size:0.68rem;color:var(--text-light);margin-bottom:20px;">
+ <span>Minimal</span><span>Mild</span><span>Moderate</span><span>Severe</span>
+ </div>
+
+ <div style="font-family:'Quicksand', sans-serif;font-size:1.28rem;color:var(--text-dark);line-height:1.4;" id="gad-res-label"></div>
+ <div style="font-size:0.93rem;color:var(--text-mid);margin-top:12px;line-height:1.7;font-style:italic;max-width:420px;margin-left:auto;margin-right:auto;" id="gad-res-msg"></div>
+
+ <div style="margin-top:36px;text-align:left;">
+ <div style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--text-light);margin-bottom:14px;">Response Overview</div>
+ <div id="gad-chart"></div>
+ </div>
+
+ <div style="margin-top:28px;display:flex;justify-content:center;">
+ <div class="score-ring">
+ <svg id="gad-ring" width="120" height="120" viewBox="0 0 120 120"></svg>
+ <div class="score-text">
+ <div style="font-family:'Josefin Sans', sans-serif;font-size:1.8rem;color:var(--sage-600);" id="gad-ring-num">0</div>
+ <div style="font-size:0.67rem;color:var(--text-light);">/21</div>
+ </div>
+ </div>
+ </div>
+
+ <div style="margin-top:36px;">
+ <button class="btn btn-primary btn-lg" onclick="navigateTo('/phq9')">
+ Check Depression Score →
+ </button>
+ </div>
+ </div>
+ </div>
+
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+</div>
+
+<script src="/static/js/main.js"></script>
+ <script>
+ const GAD_QUESTIONS_EN = [
+ "Feeling nervous, anxious, or on edge?",
+ "Not being able to stop or control worrying?",
+ "Worrying too much about different things?",
+ "Trouble relaxing?",
+ "Being so restless that it is hard to sit still?",
+ "Becoming easily annoyed or irritable?",
+ "Feeling afraid, as if something awful might happen?"
+ ];
+ const FREQ_OPTS = ["Not at all", "Several days", "More than half the days", "Nearly every day"];
+ const SCORE_TAGS = ["0 pts", "1 pt", "2 pts", "3 pts"];
+
+ let gadAnswers = new Array(7).fill(null);
+ let currentQ = 0;
+ let autoTimer = null;
+
+ function getQuestions() {
+ const lang = MB.get('lang') || 'en';
+ return (TRANSLATIONS[lang] && TRANSLATIONS[lang].gad_questions) || GAD_QUESTIONS_EN;
+ }
+ function getOpts() {
+ const lang = MB.get('lang') || 'en';
+ return (TRANSLATIONS[lang] && TRANSLATIONS[lang].options_freq) || FREQ_OPTS;
+ }
+
+ /* ── Dots ── */
+ function renderDots() {
+ document.getElementById('gad-dots').innerHTML =
+ Array.from({length:7}, (_,i) => {
+ let c = 'dot';
+ if (i === currentQ) c += ' current';
+ else if (gadAnswers[i] !== null) c += ' answered';
+ return `<div class="${c}" onclick="jumpTo(${i})" title="Q${i+1}"></div>`;
+ }).join('');
+ }
+
+ function jumpTo(i) {
+ clearTimeout(autoTimer);
+ currentQ = i;
+ renderQuestion(i);
+ }
+
+ /* ── Render question ── */
+ function renderQuestion(idx) {
+ const qs = getQuestions();
+ const opts = getOpts();
+ const sel = gadAnswers[idx];
+ const isLast = idx === 6;
+
+ document.getElementById('gad-questions').innerHTML = `
+ <div class="q-slide active">
+ <div class="qcard-wrap">
+ <div class="q-num-bg">${String(idx+1).padStart(2,'0')}</div>
+ <div class="q-counter">Question ${idx+1} &nbsp;·&nbsp; 7</div>
+ <div class="q-title">${qs[idx]}</div>
+ <div class="option-list">
+ ${opts.map((o,i) => `
+ <button class="opt-btn${sel===i?' selected':''}"
+ onclick="selectAnswer(${idx},${i},this)">
+ <span class="opt-radio"></span>
+ <span style="flex:1">${o}</span>
+ <span class="opt-score-tag">${SCORE_TAGS[i]}</span>
+ </button>`).join('')}
+ </div>
+ </div>
+
+ <div class="q-nav">
+ <button class="nav-btn nav-prev" onclick="prevQ()" ${idx===0?'disabled':''}>
+ ← Previous
+ </button>
+ ${isLast
+ ? `<button class="nav-btn nav-next" onclick="showGADResult()" ${sel===null?'disabled':''}>
+ View My Score →
+ </button>`
+ : `<button class="nav-btn nav-next" onclick="nextQ()" ${sel===null?'disabled':''}>
+ Next →
+ </button>`
+ }
+ </div>
+ <p class="q-hint" id="gad-hint">
+ ${sel !== null ? 'Answer recorded — proceed when ready.' : 'Select an answer to continue.'}
+ </p>
+ </div>`;
+
+ updateProgress();
+ renderDots();
+ }
+
+ /* ── Select answer ── */
+ function selectAnswer(qIdx, val, btn) {
+ gadAnswers[qIdx] = val;
+ document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+ btn.classList.add('selected');
+
+ // Unlock next button
+ const nextBtn = document.querySelector('.nav-next');
+ if (nextBtn) nextBtn.removeAttribute('disabled');
+
+ const hint = document.getElementById('gad-hint');
+ if (hint) hint.textContent = 'Answer recorded — proceed when ready.';
+
+ renderDots();
+
+ // Auto-advance on non-last questions
+ clearTimeout(autoTimer);
+ if (qIdx < 6) {
+ autoTimer = setTimeout(() => { currentQ++; renderQuestion(currentQ); }, 750);
+ }
+ }
+
+ /* ── Nav ── */
+ function nextQ() {
+ clearTimeout(autoTimer);
+ if (gadAnswers[currentQ] === null) {
+ showToast('Select first', 'Please choose an answer before proceeding.', 'warn');
+ return;
+ }
+ if (currentQ < 6) { currentQ++; renderQuestion(currentQ); }
+ else showGADResult();
+ }
+
+ function prevQ() {
+ clearTimeout(autoTimer);
+ if (currentQ > 0) { currentQ--; renderQuestion(currentQ); }
+ }
+
+ /* ── Progress ── */
+ function updateProgress() {
+ const answered = gadAnswers.filter(a => a !== null).length;
+ const pct = Math.round(((currentQ + 1) / 7) * 100);
+ document.getElementById('gad-prog').style.width = pct + '%';
+ document.getElementById('gad-prog-label').textContent =
+ `Question ${currentQ+1} of 7 · ${answered} of 7 answered`;
+ }
+
+ /* ── Show result ── */
+ function showGADResult() {
+ clearTimeout(autoTimer);
+ const missing = gadAnswers.map((a,i) => a===null ? i+1 : null).filter(Boolean);
+ if (missing.length) {
+ showToast('Almost there', `Please answer question${missing.length>1?'s':''}: ${missing.join(', ')}.`, 'warn');
+ return;
+ }
+
+ const score = gadAnswers.reduce((a,b) => a+b, 0);
+ MB.set('anxiety_score', score);
+ MB.set('gad_answers', gadAnswers);
+
+ document.getElementById('gad-questions').style.display = 'none';
+ document.getElementById('gad-dots').style.display = 'none';
+ document.querySelector('.prog-row').style.display = 'none';
+ document.getElementById('gad-result').style.display = 'block';
+
+ document.getElementById('gad-res-score').textContent = score;
+ document.getElementById('gad-ring-num').textContent = score;
+
+ let label, msg, color, pct;
+ if (score <= 4) {
+ label = 'Minimal or No Anxiety';
+ msg = 'Minimal or no anxiety — come on, keep it up! You are doing absolutely amazing.';
+ color = '#5a8a5a'; pct = 10;
+ } else if (score <= 9) {
+ label = 'Mild Anxiety';
+ msg = 'Mild anxiety — it is alright, it can be overcome easily. You can do it!';
+ color = '#7aaa7a'; pct = 38;
+ } else if (score <= 14) {
+ label = 'Moderate Anxiety';
+ msg = 'Moderate anxiety — that is not a big deal. You can overcome it like a game. We trust you!';
+ color = '#c9a96e'; pct = 65;
+ } else {
+ label = 'Severe Anxiety';
+ msg = 'Severe anxiety — need to work hard, but We know you will do it. Consider speaking with a professional.';
+ color = '#a8785a'; pct = 92;
+ }
+
+ document.getElementById('gad-res-label').textContent = label;
+ document.getElementById('gad-res-msg').textContent = msg;
+
+ const fill = document.getElementById('gad-sev-fill');
+ fill.style.background = color;
+ setTimeout(() => { fill.style.width = pct + '%'; }, 120);
+
+ drawScoreRing('gad-ring', score, 21, color);
+
+ drawBarChart('gad-chart',
+ ['Nervous','Worry ctrl','Worry lvl','Relaxing','Restless','Irritable','Fear'],
+ gadAnswers.map(v => Math.round(v/3*100)),
+ ['#5a8a5a','#7aaa7a','#a8c8a8','#c8ddc8','#c9a96e','#b8a090','#8a9a8a']);
+
+ document.getElementById('gad-prog').style.width = '100%';
+ document.getElementById('gad-prog-label').textContent = 'All 7 questions answered';
+ }
+
+ window.addEventListener('DOMContentLoaded', () => {
+ const saved = MB.get('gad_answers');
+ if (saved) { gadAnswers = saved; }
+ renderQuestion(0);
+ });
+ </script>
+</body>
+</html>

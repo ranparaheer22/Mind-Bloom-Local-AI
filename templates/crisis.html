@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Get help now — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ body { min-height: 100vh; }
+ .mobile-frame { min-height: 100vh; }
+ .crisis-wrap { padding: 30px 20px 60px; }
+ .crisis-hero { text-align: center; margin-bottom: 24px; }
+ .crisis-hero .icon { font-size: 2.6rem; }
+ .crisis-hero h1 { font-family: 'Josefin Sans', sans-serif; color: #c0392b; font-size: 1.5rem; margin-top: 6px; }
+ .crisis-hero p { font-size: 0.88rem; color: var(--text-dark); margin-top: 8px; line-height: 1.5; }
+ .crisis-card { background: #fdf1ef; border: 1px solid #f3c8c1; border-radius: var(--radius-lg); padding: 16px 18px; margin-bottom: 12px; }
+ .crisis-card .cc-name { font-weight: 700; color: #a33a2b; font-size: 0.95rem; }
+ .crisis-card .cc-number { font-size: 1.3rem; font-weight: 700; color: #c0392b; margin-top: 4px; }
+ .crisis-card .cc-number a { color: inherit; text-decoration: none; }
+ .crisis-card .cc-note { font-size: 0.78rem; color: var(--text-light); margin-top: 2px; }
+ .safety-tips { background: var(--sage-50); border-radius: var(--radius-lg); padding: 16px 18px; margin-top: 20px; }
+ .safety-tips h3 { font-size: 0.92rem; font-weight: 700; color: var(--sage-700); margin-bottom: 8px; }
+ .safety-tips li { font-size: 0.85rem; color: var(--text-dark); margin-bottom: 6px; }
+ </style>
+</head>
+<body class="has-shell">
+ <div class="mobile-frame">
+ <div class="crisis-wrap">
+ <div class="crisis-hero">
+ <div class="icon">🆘</div>
+ <h1>You don't have to go through this alone</h1>
+ <p>If you're in immediate danger, please call emergency services right away. Otherwise, these helplines are free and confidential.</p>
+ </div>
+
+ {% for r in crisis_resources %}
+ <div class="crisis-card">
+ <div class="cc-name">{{ r.name }}</div>
+ <div class="cc-number">
+ {% if r.number[0].isdigit() %}<a href="tel:{{ r.number }}">{{ r.number }}</a>{% else %}{{ r.number }}{% endif %}
+ </div>
+ <div class="cc-note">{{ r.note }}</div>
+ </div>
+ {% endfor %}
+
+ <div class="safety-tips">
+ <h3>Right now, it might help to:</h3>
+ <ul>
+ <li>Reach out to someone you trust — a friend, family member, or neighbor</li>
+ <li>Move to a safe space, away from anything that could cause harm</li>
+ <li>Focus on getting through the next few minutes, not the whole day</li>
+ </ul>
+ </div>
+
+ <p style="text-align:center;font-size:0.8rem;color:var(--text-light);margin-top:20px;">
+ <a href="/dashboard" style="color:var(--sage-600);font-weight:600;">← Back to Mind Bloom</a>
+ </p>
+ </div>
+ </div>
+</body>
+</html>

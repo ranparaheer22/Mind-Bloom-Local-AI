@@ -1,0 +1,28 @@
+<nav class="bottom-nav">
+ <a href="/dashboard" class="nav-tab {{ 'active' if request.path == '/dashboard' else '' }}">
+ <span class="nav-icon">🏠</span>
+ <span class="nav-label">Home</span>
+ </a>
+ <a href="/journal" class="nav-tab {{ 'active' if request.path.startswith('/journal') else '' }}">
+ <span class="nav-icon">📔</span>
+ <span class="nav-label">Journal</span>
+ </a>
+ <a href="/chat" class="nav-tab {{ 'active' if request.path.startswith('/chat') else '' }}">
+ <span class="nav-icon">💬</span>
+ <span class="nav-label">Chat</span>
+ </a>
+ <a href="/video" class="nav-tab {{ 'active' if request.path.startswith('/video') else '' }}">
+ <span class="nav-icon">🎥</span>
+ <span class="nav-label">Video</span>
+ </a>
+ <a href="/test" class="nav-tab {{ 'active' if request.path.startswith('/test') or request.path in ['/welcome2','/lifestyle','/gad7','/phq9','/result','/end'] else '' }}">
+ <span class="nav-icon">📝</span>
+ <span class="nav-label">Test</span>
+ </a>
+</nav>
+
+<a href="/crisis" class="crisis-fab" aria-label="Get help now" title="Get help now">🆘</a>
+
+<button class="theme-fab" id="theme-toggle-btn" onclick="toggleTheme()" aria-label="Toggle dark mode" title="Toggle dark/light mode">
+ <span id="theme-fab-icon">🌙</span>
+</button>

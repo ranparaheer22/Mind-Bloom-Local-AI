@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Your Result — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+ 
+ <style>
+ .result-page { min-height: 100vh; padding: 90px 20px 80px; }
+ .result-inner { max-width: 800px; margin: 0 auto; }
+ .result-header { text-align: center; margin-bottom: 40px; }
+ .result-title {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 2.6rem; color: var(--sage-700);
+ }
+ .dashboard-grid {
+ display: grid;
+ grid-template-columns: 1fr 1fr;
+ gap: 20px;
+ margin-bottom: 24px;
+ }
+ @media(max-width:580px){ .dashboard-grid { grid-template-columns: 1fr; } }
+ .dash-card {
+ background: var(--surface); border-radius: 20px;
+ padding: 28px 24px;
+ box-shadow: 0 4px 24px rgba(90,138,90,0.1);
+ border: 1px solid var(--sage-100);
+ }
+ .dash-card-title {
+ font-size: 0.75rem; text-transform: uppercase;
+ letter-spacing: 0.12em; color: var(--text-light);
+ margin-bottom: 12px;
+ }
+ .condition-display {
+ background: var(--surface); border-radius: 24px;
+ padding: 40px 36px; text-align: center;
+ box-shadow: 0 8px 40px rgba(90,138,90,0.14);
+ border: 1px solid var(--sage-100);
+ margin-bottom: 24px;
+ position: relative; overflow: hidden;
+ }
+ .condition-display::before {
+ content: ''; position: absolute; top:0; left:0; right:0;
+ height: 5px;
+ background: linear-gradient(90deg, var(--sage-400), var(--gold), var(--sage-600));
+ }
+ .cond-emoji { font-size: 4rem; animation: float 3s ease-in-out infinite; }
+ .cond-name {
+ font-family: 'Bebas Neue', cursive;
+ font-size: 3rem; color: var(--sage-700);
+ letter-spacing: 0.06em;
+ margin-top: 10px;
+ }
+ .cond-msg {
+ font-family: 'Quicksand', sans-serif;
+ font-style: italic;
+ font-size: 1.1rem; color: var(--text-mid);
+ line-height: 1.7; max-width: 500px;
+ margin: 14px auto 0;
+ }
+ .solutions-card {
+ background: var(--surface); border-radius: 24px;
+ padding: 36px 32px;
+ box-shadow: 0 4px 24px rgba(90,138,90,0.1);
+ border: 1px solid var(--sage-100);
+ margin-bottom: 24px;
+ }
+ .solutions-title {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 1.8rem; color: var(--sage-700);
+ margin-bottom: 20px;
+ }
+ .sol-item {
+ display: flex; gap: 14px;
+ padding: 16px 0;
+ border-bottom: 1px solid var(--sage-100);
+ align-items: flex-start;
+ animation: fadeInUp 0.5s ease both;
+ }
+ .sol-item:last-child { border-bottom: none; }
+ .sol-icon { font-size: 1.5rem; flex-shrink: 0; margin-top: 2px; }
+ .sol-text { font-size: 0.93rem; color: var(--text-dark); line-height: 1.65; }
+ .sol-text strong { color: var(--sage-700); }
+ .radar-card {
+ background: var(--surface); border-radius: 24px;
+ padding: 36px 32px;
+ box-shadow: 0 4px 24px rgba(90,138,90,0.1);
+ border: 1px solid var(--sage-100);
+ margin-bottom: 24px;
+ text-align: center;
+ }
+ .action-row {
+ display: flex; gap: 14px; flex-wrap: wrap;
+ justify-content: center; margin-top: 40px;
+ }
+ @media(max-width:480px){
+ .result-title { font-size: 2rem; }
+ .cond-name { font-size: 2rem; }
+ .solutions-card,.radar-card { padding: 24px 20px; }
+ }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+ <div class="bg-pattern"></div>
+ <div class="app-shell">
+<nav class="topbar">
+ <div class="topbar-brand">
+ <img src="/static/images/logo.png" alt="Logo"/>
+ <span>Mind Bloom</span>
+ </div>
+ <div style="font-size:0.8rem;color:var(--text-light);">Step 6 of 7</div>
+ </nav>
+
+ <div class="result-page">
+ <div class="result-inner" id="result-report">
+ <div class="result-header anim-fadeInUp">
+ <div style="font-size:2.4rem;margin-bottom:12px;"></div>
+ <h1 class="result-title" data-t="result_title">Your Mental Health Report</h1>
+ <p style="color:var(--text-light);margin-top:8px;font-size:0.9rem;">Powered by KNN Machine Learning &amp; Clinical Scales </p>
+ </div>
+
+ <!-- Loading state -->
+ <div id="loading-state" style="text-align:center;padding:60px 0;">
+ <div style="font-size:3rem;animation:float 2s ease-in-out infinite;"></div>
+ <p style="margin-top:16px;color:var(--text-mid);font-size:1rem;">Analyzing your responses with AI…</p>
+ <div class="loader-dots" style="justify-content:center;margin-top:16px;">
+ <span></span><span></span><span></span>
+ </div>
+ </div>
+
+ <!-- Condition Display -->
+ <div class="condition-display anim-scaleIn" id="condition-display" style="display:none">
+ <span class="cond-emoji" id="cond-emoji">🌿</span>
+ <div class="cond-name" id="cond-name">Loading…</div>
+ <p class="cond-msg" id="cond-msg"></p>
+ </div>
+
+ <!-- Score Dashboard -->
+ <div class="dashboard-grid" id="score-grid" style="display:none">
+ <div class="dash-card anim-fadeInUp delay-1">
+ <div class="dash-card-title"> Anxiety Score (GAD-7)</div>
+ <div style="display:flex;align-items:center;gap:16px;">
+ <div class="score-ring">
+ <svg id="anx-ring" width="80" height="80" viewBox="0 0 120 120"></svg>
+ <div class="score-text">
+ <div style="font-family:'Josefin Sans', sans-serif;font-size:1.4rem;color:var(--sage-600);" id="anx-num">0</div>
+ </div>
+ </div>
+ <div>
+ <div style="font-size:0.85rem;color:var(--text-mid);" id="anx-label">–</div>
+ <div style="font-size:0.75rem;color:var(--text-light);margin-top:4px;">out of 21</div>
+ </div>
+ </div>
+ </div>
+ <div class="dash-card anim-fadeInUp delay-2">
+ <div class="dash-card-title">💙 Depression Score (PHQ-9)</div>
+ <div style="display:flex;align-items:center;gap:16px;">
+ <div class="score-ring">
+ <svg id="dep-ring" width="80" height="80" viewBox="0 0 120 120"></svg>
+ <div class="score-text">
+ <div style="font-family:'Josefin Sans', sans-serif;font-size:1.4rem;color:var(--gold);" id="dep-num">0</div>
+ </div>
+ </div>
+ <div>
+ <div style="font-size:0.85rem;color:var(--text-mid);" id="dep-label">–</div>
+ <div style="font-size:0.75rem;color:var(--text-light);margin-top:4px;">out of 27</div>
+ </div>
+ </div>
+ </div>
+ <div class="dash-card anim-fadeInUp delay-3">
+ <div class="dash-card-title"> AI Confidence</div>
+ <div id="ai-probs"></div>
+ </div>
+ <div class="dash-card anim-fadeInUp delay-4">
+ <div class="dash-card-title"> Your Profile</div>
+ <div id="user-profile"></div>
+ </div>
+ </div>
+
+ <!-- Radar Chart -->
+ <div class="radar-card anim-fadeInUp" id="radar-section" style="display:none">
+ <div style="font-family:'Josefin Sans', sans-serif;font-size:1.8rem;color:var(--sage-700);margin-bottom:6px;">️ Wellness Radar</div>
+ <p style="font-size:0.83rem;color:var(--text-light);margin-bottom:24px;">Overview of your mental health dimensions</p>
+ <div id="radar-chart"></div>
+ </div>
+
+ <!-- Solutions -->
+ <div class="solutions-card anim-fadeInUp" id="solutions-section" style="display:none">
+ <div class="solutions-title">💡 Personalised Solutions For You</div>
+ <div id="solutions-list"></div>
+ </div>
+
+ <!-- Actions -->
+ <div class="action-row" id="action-row" style="display:none">
+ <button class="download-btn" onclick="downloadPDF()">
+ Download Report as PDF
+ </button>
+ <button class="btn btn-primary btn-lg" onclick="navigateTo('/end')">
+ Continue to Finale 
+ </button>
+ </div>
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+</div>
+
+<script src="/static/js/main.js"></script>
+ <script>
+ const SOLUTIONS = {
+ 'Anxiety': [
+ { icon:'', title:'Mindful Breathing', text:'Practice 4-7-8 breathing daily: inhale 4s, hold 7s, exhale 8s. This activates your parasympathetic nervous system and calms anxiety naturally.' },
+ { icon:'', title:'Journaling Your Worries', text:'Write your anxious thoughts down every evening. Externalizing worries reduces their power and helps you spot irrational patterns.' },
+ { icon:'🍃', title:'Nature Exposure', text:'Spend at least 20 minutes outdoors daily. Green environments measurably lower cortisol and anxiety hormones.' },
+ { icon:'', title:'Digital Detox Windows', text:'Set 2-hour phone-free windows each day — especially before bed. News cycles and social media are major anxiety amplifiers.' },
+ { icon:'🎵', title:'Music Therapy', text:'Listen to calming, 60 BPM music (lo-fi, classical). Music at this tempo synchronizes with your heartbeat and calms the nervous system.' },
+ { icon:'💚', title:'Aerobic Exercise', text:'30 minutes of brisk walking or jogging 5x/week releases endorphins and is as effective as medication for mild-moderate anxiety.' }
+ ],
+ 'Depression': [
+ { icon:'☀️', title:'Morning Light Ritual', text:'Get 15–20 minutes of natural sunlight every morning. Light therapy resets circadian rhythms and boosts serotonin production.' },
+ { icon:'', title:'Social Connection', text:'Even one meaningful conversation per day matters. Depression thrives in isolation — reach out to someone you trust regularly.' },
+ { icon:'️', title:'Movement as Medicine', text:'Exercise is one of the most evidence-backed treatments for depression. Start small — even 10-minute walks count and build momentum.' },
+ { icon:'🍃', title:'Nourish Your Brain', text:'Eat omega-3 rich foods (fish, walnuts, flaxseeds), reduce sugar, and stay hydrated. Your gut health directly impacts your mood.' },
+ { icon:'🌿', title:'Tiny Achievable Goals', text:'Set and complete one small task daily. Completing even tiny goals restores your sense of agency and builds positive momentum.' },
+ { icon:'💙', title:'Professional Support', text:'Consider speaking to a therapist or counselor. CBT (Cognitive Behavioral Therapy) has excellent outcomes for depression. You deserve support!' }
+ ],
+ 'Stress': [
+ { icon:'🔵', title:'Time Blocking', text:'Divide your day into focused blocks with planned breaks. Unmanaged tasks are the #1 source of chronic stress.' },
+ { icon:'🧠', title:'Cognitive Reframing', text:'When stressed, ask: "Will this matter in 5 years?" Changing your perspective on stressors dramatically reduces their emotional weight.' },
+ { icon:'🌿', title:'Progressive Muscle Relaxation', text:'Tense and release each muscle group from feet to head for 2 seconds each. This physically releases stored tension from your body.' },
+ { icon:'🌱', title:'Walking Breaks', text:'Take 5-minute walking breaks every 90 minutes during work. Movement clears cortisol and refreshes cognitive function.' },
+ { icon:'🌙', title:'Sleep Hygiene First', text:'Stress and sleep have a bidirectional relationship. Prioritize consistent 7-8 hour sleep — it\'s your #1 stress recovery tool.' },
+ { icon:'💜', title:'Creative Outlet', text:'Engage in any creative activity (drawing, cooking, crafting) for 30 min daily. Creativity shifts your brain away from stress circuits.' }
+ ],
+ 'Anxiety+Depression': [
+ { icon:'💙', title:'Seek Professional Help', text:'With both anxiety and depression present, a mental health professional can provide the most effective combined treatment plan.' },
+ { icon:'🌿', title:'Medication Consultation', text:'Speak with a doctor about whether medication might help alongside therapy. SSRIs are often effective for comorbid conditions.' },
+ { icon:'', title:'Integrated Mindfulness', text:'Practice mindfulness meditation 15–20 min daily. It simultaneously reduces both anxiety and depressive rumination.' },
+ { icon:'🔵', title:'Structured Routine', text:'Create a consistent daily schedule. Structure reduces uncertainty (anxiety trigger) and inertia (depression trigger) simultaneously.' },
+ { icon:'🌱', title:'Gradual Activity Restoration', text:'Slowly reintroduce enjoyable activities even when motivation is low. Behavioral activation is key for the anxiety-depression cycle.' },
+ { icon:'', title:'Support Groups', text:'Connect with others who understand your experience. Shared understanding reduces shame and isolation — both recovery barriers.' }
+ ],
+ 'No Condition': [
+ { icon:'', title:'Maintain Your Momentum', text:'You\'re in great mental health! Keep your current routines — they\'re clearly working. Don\'t break what isn\'t broken!' },
+ { icon:'️', title:'Build Resilience Proactively', text:'Now is the perfect time to build stress-coping tools for future challenges. Practice mindfulness before you need it.' },
+ { icon:'🌙', title:'Protect Your Sleep', text:'Quality sleep is the foundation of mental health. Guard your 7–9 hours as non-negotiable self-care.' },
+ { icon:'', title:'Nurture Your Relationships', text:'Strong social connections are the single biggest predictor of long-term happiness. Invest in your people regularly.' },
+ { icon:'🍃', title:'Stay Active', text:'Regular exercise is your best insurance against future mental health challenges. Keep moving! ' },
+ { icon:'🧠', title:'Mental Health Literacy', text:'Continue learning about emotional wellbeing. Awareness helps you spot early warning signs and support others too.' }
+ ]
+ };
+
+ const CONDITION_DATA = {
+ 'Anxiety': { emoji:'🌱', color:'#ff9800', msg:'Anxiety is your mind working overtime. But you have the tools to find peace again — one breath at a time. 💚' },
+ 'Depression': { emoji:'💙', color:'#2196f3', msg:'You carry more than others see. Depression doesn\'t define you — it\'s a chapter, not your whole story. You\'re not alone. 🌱' },
+ 'Stress': { emoji:'🌿', color:'#f44336', msg:'You\'re carrying a lot right now. But stress is manageable — and you have the strength to lighten this load. 🌿' },
+ 'Anxiety+Depression': { emoji:'', color:'#9c27b0', msg:'Facing both anxiety and depression takes incredible courage. You\'ve already taken the first brave step by being here. ' },
+ 'No Condition': { emoji:'🌿', color:'#4caf50', msg:'You\'re in wonderful mental health! You\'re a real inspiration — keep nurturing yourself with the same love and care. ' }
+ };
+
+ async function loadResult() {
+ const user = MB.get('user') || {};
+ const lifestyle = MB.get('lifestyle') || {};
+ const anxScore = MB.get('anxiety_score') || 0;
+ const depScore = MB.get('depression_score') || 0;
+
+ // Map slider vals to dataset columns
+ const sleepMap = [2,4.5,6.5,7.5,9];
+ const workMap = [1,3.5,5.5,7.5,10];
+ const screenMap = [1,3.5,5.5,7.5,10];
+
+ const payload = {
+ age: user.age || 25,
+ gender: user.gender || 'Other',
+ sleep_hours: sleepMap[lifestyle.sleep ?? 2],
+ work_study_hours: workMap[lifestyle.work ?? 2],
+ physical_activity: lifestyle.activity ?? 3,
+ social_interaction: lifestyle.social ?? 5,
+ stress_level: Math.round((anxScore / 21) * 10) || 5,
+ anxiety_score: anxScore,
+ depression_score: depScore,
+ screen_time: screenMap[lifestyle.screen ?? 2],
+ caffeine: lifestyle.caffeine ?? 0,
+ alcohol: lifestyle.alcohol ?? 0,
+ family_history: lifestyle.family_history ?? 0,
+ therapy_history: lifestyle.therapy ?? 0
+ };
+
+ try {
+ const res = await fetch('/predict', {
+ method: 'POST',
+ headers: {'Content-Type':'application/json'},
+ body: JSON.stringify(payload)
+ });
+ const data = await res.json();
+ if (data.success) {
+ MB.set('condition', data.condition);
+ MB.set('probabilities', data.probabilities);
+ renderResult(data.condition, data.probabilities, anxScore, depScore, user, lifestyle);
+ } else {
+ // Fallback: derive from scores
+ let cond = 'No Condition';
+ if (anxScore >= 10 && depScore >= 10) cond = 'Anxiety+Depression';
+ else if (anxScore >= 10) cond = 'Anxiety';
+ else if (depScore >= 10) cond = 'Depression';
+ else if (anxScore >= 5 || depScore >= 5) cond = 'Stress';
+ renderResult(cond, {}, anxScore, depScore, user, lifestyle);
+ }
+ } catch(e) {
+ let cond = 'No Condition';
+ if (anxScore >= 10 && depScore >= 10) cond = 'Anxiety+Depression';
+ else if (anxScore >= 10) cond = 'Anxiety';
+ else if (depScore >= 10) cond = 'Depression';
+ else if (anxScore >= 5 || depScore >= 5) cond = 'Stress';
+ renderResult(cond, {}, anxScore, depScore, user, lifestyle);
+ }
+ }
+
+ function renderResult(condition, probs, anxScore, depScore, user, lifestyle) {
+ document.getElementById('loading-state').style.display = 'none';
+
+ const condData = CONDITION_DATA[condition] || CONDITION_DATA['No Condition'];
+
+ // Condition display
+ const condEl = document.getElementById('condition-display');
+ condEl.style.display = 'block';
+ document.getElementById('cond-emoji').textContent = condData.emoji;
+ document.getElementById('cond-name').textContent = condition;
+ document.getElementById('cond-msg').textContent = condData.msg;
+
+ // Score grid
+ document.getElementById('score-grid').style.display = 'grid';
+
+ // Anxiety ring
+ document.getElementById('anx-num').textContent = anxScore;
+ drawScoreRing('anx-ring', anxScore, 21, anxScore<=4?'#4caf50':anxScore<=9?'#8bc34a':anxScore<=14?'#ff9800':'#f44336');
+ document.getElementById('anx-label').textContent = anxScore<=4?'Minimal':anxScore<=9?'Mild':anxScore<=14?'Moderate':'Severe';
+
+ // Depression ring
+ document.getElementById('dep-num').textContent = depScore;
+ drawScoreRing('dep-ring', depScore, 27, depScore<=4?'#4caf50':depScore<=9?'#8bc34a':depScore<=14?'#2196f3':depScore<=19?'#9c27b0':'#f44336');
+ document.getElementById('dep-label').textContent = depScore<=4?'Minimal':depScore<=9?'Mild':depScore<=14?'Moderate':depScore<=19?'Mod. Severe':'Severe';
+
+ // AI probabilities
+ const probEl = document.getElementById('ai-probs');
+ const probEntries = Object.entries(probs).sort((a,b)=>b[1]-a[1]).slice(0,3);
+ probEl.innerHTML = probEntries.length ? probEntries.map(([k,v])=>`
+ <div style="margin-bottom:8px;">
+ <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-mid);margin-bottom:3px;">
+ <span>${k}</span><span>${v}%</span>
+ </div>
+ <div style="height:4px;background:var(--sage-100);border-radius:2px;overflow:hidden">
+ <div style="height:100%;width:${v}%;background:var(--sage-500);transition:width 1s ease;border-radius:2px"></div>
+ </div>
+ </div>`).join('')
+ : '<p style="font-size:0.82rem;color:var(--text-light)">Score-based analysis</p>';
+
+ // User profile
+ document.getElementById('user-profile').innerHTML = `
+ <div style="font-size:0.85rem;color:var(--text-mid);line-height:1.8">
+ <div> ${user.name || 'User'}, ${user.age || '–'}</div>
+ <div>${user.gender === 'Male' ? '♂️' : user.gender === 'Female' ? '♀️' : ''} ${user.gender || '–'}</div>
+ <div> ${['<4h','4–5h','6–7h','7–8h','>8h'][lifestyle.sleep??2]} sleep</div>
+ <div> ${lifestyle.activity??3} active days/wk</div>
+ </div>`;
+
+ // Radar chart
+ document.getElementById('radar-section').style.display = 'block';
+ const sleepNorm = ((lifestyle.sleep??2)/4)*10;
+ const actNorm = ((lifestyle.activity??3)/7)*10;
+ const socialNorm = lifestyle.social ?? 5;
+ const screenRev = (4-(lifestyle.screen??2))/4*10;
+ const caffRev = (5-(lifestyle.caffeine??0))/5*10;
+ const alcRev = (5-(lifestyle.alcohol??0))/5*10;
+ const anxRev = (1-(anxScore/21))*10;
+ const depRev = (1-(depScore/27))*10;
+
+ drawRadarChart('radar-chart',
+ ['Sleep','Activity','Social','Screen✓','Caffeine✓','Alcohol✓','Anxiety✓','Depr.✓'],
+ [sleepNorm,actNorm,socialNorm,screenRev,caffRev,alcRev,anxRev,depRev], 10);
+
+ // Solutions
+ document.getElementById('solutions-section').style.display = 'block';
+ const sols = SOLUTIONS[condition] || SOLUTIONS['No Condition'];
+ document.getElementById('solutions-list').innerHTML = sols.map((s,i)=>`
+ <div class="sol-item" style="animation-delay:${i*0.1}s">
+ <span class="sol-icon">${s.icon}</span>
+ <div class="sol-text"><strong>${s.title}</strong><br>${s.text}</div>
+ </div>`).join('');
+
+ // Actions
+ document.getElementById('action-row').style.display = 'flex';
+ }
+
+ async function downloadPDF() {
+   showToast('Generating PDF...', 'Building your report, just a moment!', 'info');
+   try {
+     const { jsPDF } = window.jspdf;
+
+     // ── Live data ─────────────────────────────────────────────
+     const user      = MB.get('user')              || {};
+     const lifestyle = MB.get('lifestyle')         || {};
+     const anxScore  = parseInt(MB.get('anxiety_score'))    || 0;
+     const depScore  = parseInt(MB.get('depression_score')) || 0;
+     const condition = MB.get('condition') || document.getElementById('cond-name').textContent.trim() || 'No Condition';
+     const probs     = MB.get('probabilities') || {};
+     const userName  = user.name   || 'User';
+     const userAge   = user.age    || '?';
+     const userGender= user.gender || '?';
+
+     // ── Solid colour palette (no CSS variables, no alpha hex) ─
+     const CREAM   = [250,248,243];
+     const SAGE50  = [244,247,244];
+     const SAGE100 = [232,240,232];
+     const SAGE200 = [209,226,209];
+     const SAGE400 = [122,170,122];
+     const SAGE500 = [90,138,90];
+     const SAGE600 = [74,122,74];
+     const SAGE700 = [58,106,58];
+     const GOLD    = [201,169,110];
+     const WHITE   = [255,255,255];
+     const TXT_D   = [44,62,44];
+     const TXT_M   = [74,94,74];
+     const TXT_L   = [122,142,122];
+
+     const condRGB = {
+       'No Condition':       SAGE500,
+       'Anxiety':            GOLD,
+       'Depression':         [90,122,170],
+       'Stress':             [170,106,90],
+       'Anxiety+Depression': [138,90,170]
+     };
+     const ACCENT = condRGB[condition] || SAGE500;
+
+     const anxRGB = anxScore<=4?SAGE500:anxScore<=9?SAGE400:anxScore<=14?GOLD:[170,106,90];
+     const depRGB = depScore<=4?SAGE500:depScore<=9?SAGE400:depScore<=14?[90,122,170]:depScore<=19?[138,90,170]:[170,90,106];
+
+     // ── PDF setup ─────────────────────────────────────────────
+     const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' });
+     const PW=210, PH=297, M=14, CW=182;
+     let y=0;
+
+     // helpers ─────────────────────────────────────────────────
+     const setFill   = rgb => doc.setFillColor(rgb[0],rgb[1],rgb[2]);
+     const setDraw   = rgb => doc.setDrawColor(rgb[0],rgb[1],rgb[2]);
+     const setTxt    = rgb => doc.setTextColor(rgb[0],rgb[1],rgb[2]);
+
+     function box(x,by,w,h,fill,stroke,radius) {
+       const r = radius||0;
+       if(fill)  { setFill(fill);  r>0 ? doc.roundedRect(x,by,w,h,r,r,'F') : doc.rect(x,by,w,h,'F'); }
+       if(stroke){ setDraw(stroke); doc.setLineWidth(0.28); r>0 ? doc.roundedRect(x,by,w,h,r,r,'S') : doc.rect(x,by,w,h,'S'); }
+     }
+
+     function t(str, x, by, size, col, bold, align) {
+       doc.setFontSize(size||10);
+       setTxt(col||TXT_D);
+       doc.setFont('helvetica', bold?'bold':'normal');
+       doc.text(String(str||''), x, by, {align:align||'left', baseline:'top'});
+     }
+
+     function wt(str, x, by, maxW, size, col, bold, lh) {
+       doc.setFontSize(size||9); setTxt(col||TXT_M);
+       doc.setFont('helvetica', bold?'bold':'normal');
+       const lines = doc.splitTextToSize(String(str||''), maxW);
+       lines.forEach((l,i) => doc.text(l, x, by+i*(lh||5)));
+       return by + lines.length*(lh||5);
+     }
+
+     function arc(cx,cy,r,score,maxScore,col) {
+       const pct   = Math.max(0,Math.min(score/maxScore,1));
+       const steps = 64;
+       const ang   = i => -Math.PI/2 + 2*Math.PI*(i/steps);
+       // bg ring
+       setDraw(SAGE100); doc.setLineWidth(3);
+       for(let i=1;i<=steps;i++) doc.line(cx+r*Math.cos(ang(i-1)),cy+r*Math.sin(ang(i-1)),cx+r*Math.cos(ang(i)),cy+r*Math.sin(ang(i)));
+       // filled arc
+       if(pct>0){ setDraw(col); doc.setLineWidth(3);
+         const fs=Math.round(steps*pct);
+         for(let i=1;i<=fs;i++) doc.line(cx+r*Math.cos(ang(i-1)),cy+r*Math.sin(ang(i-1)),cx+r*Math.cos(ang(i)),cy+r*Math.sin(ang(i)));
+       }
+       // centre label
+       doc.setFontSize(12); setTxt(col); doc.setFont('helvetica','bold');
+       doc.text(String(score), cx, cy-3, {align:'center',baseline:'top'});
+       doc.setFontSize(7); setTxt(TXT_L); doc.setFont('helvetica','normal');
+       doc.text('/'+maxScore, cx, cy+3.5, {align:'center',baseline:'top'});
+     }
+
+     // ═══════════════════════════════════════════════════════
+     // PAGE 1
+     // ═══════════════════════════════════════════════════════
+     box(0,0,PW,PH, CREAM, null);
+
+     // Header
+     box(0,0,PW,36, SAGE700, null);
+     box(0,33,PW,3,  ACCENT,  null);
+     t('Mind Bloom', M, 8, 20, WHITE, true);
+     t('Mental Health Report', M, 22, 9, SAGE200);
+     const dateStr = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+     t('Generated for '+userName+' · '+dateStr, PW-M, 8, 8, SAGE200, false, 'right');
+
+     y = 45;
+
+     // Condition card
+     box(M,y,CW,30, WHITE, SAGE200, 3);
+     box(M,y,4,30,  ACCENT, null, 2);
+     t('DETECTED CONDITION', M+8, y+4, 7, TXT_L);
+     t(condition, M+8, y+11, 15, ACCENT, true);
+     const condMsg = document.getElementById('cond-msg')?.textContent || '';
+     wt(condMsg, M+8, y+22, CW-14, 8, TXT_M, false, 4.5);
+     y += 36;
+
+     // Score cards
+     const cw2 = (CW-6)/2;
+     // anxiety
+     box(M,y,cw2,34, WHITE, SAGE200, 3);
+     t('ANXIETY SCORE  (GAD-7)', M+4, y+4, 6.5, TXT_L);
+     arc(M+16, y+21, 10, anxScore, 21, anxRGB);
+     const aLbl = anxScore<=4?'Minimal':anxScore<=9?'Mild':anxScore<=14?'Moderate':'Severe';
+     t(aLbl, M+30, y+14, 8.5, anxRGB, true);
+     t('out of 21', M+30, y+22, 7, TXT_L);
+     // depression
+     const dx = M+cw2+6;
+     box(dx,y,cw2,34, WHITE, SAGE200, 3);
+     t('DEPRESSION SCORE  (PHQ-9)', dx+4, y+4, 6.5, TXT_L);
+     arc(dx+16, y+21, 10, depScore, 27, depRGB);
+     const dLbl = depScore<=4?'Minimal':depScore<=9?'Mild':depScore<=14?'Moderate':depScore<=19?'Mod. Severe':'Severe';
+     t(dLbl, dx+30, y+14, 8.5, depRGB, true);
+     t('out of 27', dx+30, y+22, 7, TXT_L);
+     y += 40;
+
+     // AI Probability bars
+     const probEntries = Object.entries(probs).sort((a,b)=>b[1]-a[1]).slice(0,5);
+     const probH = probEntries.length ? 14+probEntries.length*9 : 24;
+     box(M,y,CW,probH, WHITE, SAGE200, 3);
+     t('AI CONFIDENCE BREAKDOWN', M+4, y+4, 7, TXT_L);
+     if(probEntries.length){
+       let by=y+13;
+       probEntries.forEach(([k,v])=>{
+         t(k, M+4, by, 8, TXT_D);
+         t(v+'%', PW-M-4, by, 8, TXT_M, false, 'right');
+         box(M+4, by+5, CW-8, 3, SAGE100, null, 1);
+         if(v>0) box(M+4, by+5, Math.max(1,(CW-8)*(v/100)), 3, ACCENT, null, 1);
+         by+=9;
+       });
+     } else {
+       t('Score-based analysis (no API response)', M+4, y+12, 8, TXT_M);
+     }
+     y += probH+6;
+
+     // User profile strip
+     box(M,y,CW,14, SAGE50, SAGE200, 2);
+     const slpLbls=['<4h','4-5h','6-7h','7-8h','>8h'];
+     t(userName, M+4, y+3, 8.5, TXT_D, true);
+     t('Age: '+userAge+'  |  Gender: '+userGender+'  |  Sleep: '+slpLbls[lifestyle.sleep??2]+'  |  Active days/wk: '+(lifestyle.activity??3), M+4, y+9, 7.5, TXT_M);
+     y += 20;
+
+     // Wellness Radar
+     box(M,y,CW,66, WHITE, SAGE200, 3);
+     t('WELLNESS RADAR', M+4, y+4, 7, TXT_L);
+
+     const rVals=[
+       ((lifestyle.sleep??2)/4)*10,
+       ((lifestyle.activity??3)/7)*10,
+       lifestyle.social??5,
+       (4-(lifestyle.screen??2))/4*10,
+       (5-(lifestyle.caffeine??0))/5*10,
+       (5-(lifestyle.alcohol??0))/5*10,
+       (1-(anxScore/21))*10,
+       (1-(depScore/27))*10
+     ];
+     const rLbls=['Sleep','Activity','Social','Screen','Caffeine','Alcohol','Anxiety','Mood'];
+     const rcx=M+CW/2, rcy=y+40, rMax=22, rN=8;
+     const rAng = i => (i*2*Math.PI/rN)-Math.PI/2;
+
+     // grid rings
+     [0.25,0.5,0.75,1].forEach(f=>{
+       setDraw(SAGE100); doc.setLineWidth(0.2);
+       for(let i=0;i<rN;i++) doc.line(rcx+rMax*f*Math.cos(rAng(i)),rcy+rMax*f*Math.sin(rAng(i)),rcx+rMax*f*Math.cos(rAng((i+1)%rN)),rcy+rMax*f*Math.sin(rAng((i+1)%rN)));
+     });
+     setDraw(SAGE200); doc.setLineWidth(0.2);
+     for(let i=0;i<rN;i++) doc.line(rcx,rcy,rcx+rMax*Math.cos(rAng(i)),rcy+rMax*Math.sin(rAng(i)));
+
+     // data polygon
+     const rPts = rVals.map((v,i)=>({ x:rcx+rMax*(Math.min(v,10)/10)*Math.cos(rAng(i)), y:rcy+rMax*(Math.min(v,10)/10)*Math.sin(rAng(i)) }));
+     setDraw(SAGE500); doc.setLineWidth(1);
+     for(let i=0;i<rN;i++) doc.line(rPts[i].x,rPts[i].y,rPts[(i+1)%rN].x,rPts[(i+1)%rN].y);
+     rPts.forEach(p=>{ setFill(SAGE500); doc.circle(p.x,p.y,1.3,'F'); });
+
+     // radar labels
+     rLbls.forEach((lb,i)=>{
+       const lx=rcx+(rMax+9)*Math.cos(rAng(i)), ly=rcy+(rMax+9)*Math.sin(rAng(i));
+       doc.setFontSize(6.5); setTxt(TXT_M); doc.setFont('helvetica','normal');
+       doc.text(lb,lx,ly-1.5,{align:'center',baseline:'top'});
+     });
+     y += 72;
+
+     // ═══════════════════════════════════════════════════════
+     // PAGE 2 – Solutions
+     // ═══════════════════════════════════════════════════════
+     doc.addPage();
+     box(0,0,PW,PH, CREAM, null);
+     box(0,0,PW,20, SAGE700, null);
+     box(0,17,PW,3,  ACCENT,  null);
+     t('Mind Bloom  ·  Personalised Solutions', M, 6, 10, WHITE, true);
+     t('Condition: '+condition, PW-M, 6, 8, SAGE200, false, 'right');
+     y=27;
+     t('YOUR PERSONALISED WELLNESS PLAN', M, y, 9, SAGE600, true);
+     setDraw(SAGE200); doc.setLineWidth(0.25); doc.line(M,y+7,PW-M,y+7);
+     y+=13;
+
+     const SOLS = {
+       'Anxiety':[
+         {n:'01',title:'Mindful Breathing',text:'Practice 4-7-8 breathing daily: inhale for 4s, hold for 7s, exhale for 8s. This activates your parasympathetic nervous system and calms anxiety naturally.'},
+         {n:'02',title:'Journaling Worries',text:'Write your anxious thoughts down every evening. Externalising worries reduces their power and helps you spot irrational patterns.'},
+         {n:'03',title:'Nature Exposure',text:'Spend at least 20 minutes outdoors daily. Green environments measurably lower cortisol and anxiety hormones.'},
+         {n:'04',title:'Digital Detox Windows',text:'Set 2-hour phone-free windows each day, especially before bed. News and social media are major anxiety amplifiers.'},
+         {n:'05',title:'Aerobic Exercise',text:'30 minutes of brisk walking or jogging 5x per week releases endorphins and is as effective as medication for mild-moderate anxiety.'},
+         {n:'06',title:'Sleep Hygiene',text:'Consistent 7-8 hour sleep is your #1 anxiety recovery tool. Guard it as non-negotiable self-care.'}
+       ],
+       'Depression':[
+         {n:'01',title:'Morning Light Ritual',text:'Get 15-20 minutes of natural sunlight every morning. Light therapy resets circadian rhythms and boosts serotonin.'},
+         {n:'02',title:'Social Connection',text:'Even one meaningful conversation per day matters. Depression thrives in isolation — reach out to someone you trust regularly.'},
+         {n:'03',title:'Movement as Medicine',text:'Exercise is one of the most evidence-backed treatments for depression. Start small — even 10-minute walks count.'},
+         {n:'04',title:'Nourish Your Brain',text:'Eat omega-3 rich foods (fish, walnuts, flaxseeds), reduce sugar, stay hydrated. Gut health directly impacts mood.'},
+         {n:'05',title:'Tiny Achievable Goals',text:'Set and complete one small task daily. Completing even tiny goals restores your sense of agency and builds momentum.'},
+         {n:'06',title:'Professional Support',text:'Consider speaking to a therapist. CBT has excellent outcomes for depression. You deserve support.'}
+       ],
+       'Stress':[
+         {n:'01',title:'Time Blocking',text:'Divide your day into focused blocks with planned breaks. Unmanaged tasks are the #1 source of chronic stress.'},
+         {n:'02',title:'Cognitive Reframing',text:'When stressed, ask: Will this matter in 5 years? Changing your perspective on stressors reduces their emotional weight.'},
+         {n:'03',title:'Progressive Muscle Relaxation',text:'Tense and release each muscle group from feet to head. This physically releases stored tension from your body.'},
+         {n:'04',title:'Walking Breaks',text:'Take 5-minute walking breaks every 90 minutes during work. Movement clears cortisol and refreshes focus.'},
+         {n:'05',title:'Sleep Hygiene First',text:'Stress and sleep have a bidirectional relationship. Prioritise consistent 7-8 hour sleep — it is your #1 stress recovery tool.'},
+         {n:'06',title:'Creative Outlet',text:'Engage in any creative activity for 30 min daily. Creativity shifts your brain away from stress circuits.'}
+       ],
+       'Anxiety+Depression':[
+         {n:'01',title:'Seek Professional Help',text:'With both anxiety and depression present, a mental health professional can provide the most effective combined treatment plan.'},
+         {n:'02',title:'Medication Consultation',text:'Speak with a doctor about whether medication might help alongside therapy. SSRIs are often effective for comorbid conditions.'},
+         {n:'03',title:'Integrated Mindfulness',text:'Practice mindfulness meditation 15-20 min daily. It simultaneously reduces both anxiety and depressive rumination.'},
+         {n:'04',title:'Structured Routine',text:'Create a consistent daily schedule. Structure reduces uncertainty (anxiety trigger) and inertia (depression trigger) at once.'},
+         {n:'05',title:'Gradual Activity',text:'Slowly reintroduce enjoyable activities even when motivation is low. Behavioural activation is key for the anxiety-depression cycle.'},
+         {n:'06',title:'Support Groups',text:'Connect with others who understand your experience. Shared understanding reduces shame and isolation.'}
+       ],
+       'No Condition':[
+         {n:'01',title:'Maintain Your Momentum',text:'You are in great mental health! Keep your current routines — they are clearly working. Do not break what is not broken.'},
+         {n:'02',title:'Build Resilience',text:'Now is the perfect time to build stress-coping tools for future challenges. Practice mindfulness before you need it.'},
+         {n:'03',title:'Protect Your Sleep',text:'Quality sleep is the foundation of mental health. Guard your 7-9 hours as non-negotiable self-care.'},
+         {n:'04',title:'Nurture Relationships',text:'Strong social connections are the single biggest predictor of long-term happiness. Invest in your people regularly.'},
+         {n:'05',title:'Stay Active',text:'Regular exercise is your best insurance against future mental health challenges. Keep moving!'},
+         {n:'06',title:'Mental Health Literacy',text:'Continue learning about emotional wellbeing. Awareness helps you spot early warning signs and support others too.'}
+       ]
+     };
+     const sols = SOLS[condition] || SOLS['No Condition'];
+
+     sols.forEach(sol => {
+       // estimate height needed
+       doc.setFontSize(8);
+       const bodyLines = doc.splitTextToSize(sol.text, CW-22);
+       const cardH = 10 + bodyLines.length*4.8 + 6;
+       if(y+cardH > PH-18){ doc.addPage(); box(0,0,PW,PH,CREAM,null); y=14; }
+
+       box(M,y,CW,cardH, WHITE, SAGE200, 3);
+       // number badge
+       box(M+3,y+cardH/2-4.5,9,9, SAGE500,null,2);
+       doc.setFontSize(7); setTxt(WHITE); doc.setFont('helvetica','bold');
+       doc.text(sol.n, M+7.5, y+cardH/2-1.5, {align:'center',baseline:'top'});
+       // title
+       t(sol.title, M+16, y+4, 9.5, SAGE700, true);
+       // body
+       wt(sol.text, M+16, y+12, CW-22, 8, TXT_M, false, 4.8);
+       y += cardH+4;
+     });
+
+     // Footer on all pages
+     const nPages = doc.internal.getNumberOfPages();
+     for(let p=1;p<=nPages;p++){
+       doc.setPage(p);
+       box(0,PH-12,PW,12, SAGE700,null);
+       t('Mind Bloom  —  Read the mind. Begin the bloom.', M, PH-9, 7, SAGE200);
+       t('Page '+p+' of '+nPages, PW-M, PH-9, 7, SAGE200, false, 'right');
+     }
+
+     const fname = String(userName).replace(/[^a-zA-Z0-9]/g,'_');
+     doc.save('MindBloom_Report_'+fname+'.pdf');
+     showToast('Downloaded!', 'Your report has been saved successfully.', 'success');
+
+   } catch(err) {
+     console.error('PDF generation error:', err);
+     showToast('Error', 'PDF generation failed. Please try again.', 'error');
+   }
+ }
+
+ window.addEventListener('DOMContentLoaded', () => {
+ setTimeout(loadResult, 800);
+ });
+ </script>
+</body>
+</html>

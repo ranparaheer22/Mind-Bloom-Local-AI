@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Assessment — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+ <style>
+ .test-hero {
+ background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--sage-100);
+ padding: 28px 24px; text-align: center; box-shadow: 0 10px 30px rgba(90,138,90,0.1);
+ }
+ .test-hero .icon { font-size: 2.6rem; }
+ .test-hero h2 { font-family: 'Josefin Sans', sans-serif; color: var(--sage-700); font-size: 1.4rem; margin-top: 6px; }
+ .test-hero p { color: var(--text-light); font-size: 0.88rem; margin-top: 8px; line-height: 1.6; }
+ .latest-result-card {
+ background: var(--sage-50); border-radius: var(--radius-md); padding: 16px 18px; margin-top: 18px;
+ text-align: left;
+ }
+ .latest-result-card .lr-label { font-size: 0.72rem; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.06em; }
+ .latest-result-card .lr-cond { font-weight: 700; color: var(--sage-700); font-size: 1.05rem; margin-top: 2px; }
+ .latest-result-card .lr-date { font-size: 0.75rem; color: var(--text-light); margin-top: 4px; }
+ .comparison-card {
+ background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-md);
+ padding: 14px 16px; margin-top: 14px; font-size: 0.85rem; color: var(--text-dark); text-align: left;
+ }
+ .comparison-card .delta-up { color: #c0392b; }
+ .comparison-card .delta-down { color: #4d8f5c; }
+ .nudge-card {
+ background: var(--sage-50); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 8px;
+ font-size: 0.85rem; color: var(--text-dark); text-align: left;
+ }
+ .trend-chart-card {
+ background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-lg);
+ padding: 16px; margin: 16px 0;
+ }
+ .trend-chart-card h3 { font-size: 0.92rem; font-weight: 700; color: var(--sage-700); margin-bottom: 10px; text-align: left; }
+ .export-link { display: inline-block; margin-top: 10px; font-size: 0.82rem; color: var(--sage-600); font-weight: 600; text-decoration: none; }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="app-shell">
+ <div class="app-topbar">
+ <button class="hamburger-btn" onclick="openDrawer()" aria-label="Open menu">☰</button>
+ <span class="app-topbar-title">Assessment 📝</span>
+ <span style="width:24px;"></span>
+ </div>
+
+ <div class="app-content">
+ <div class="test-hero" style="text-align:left;background:var(--sage-50);border:none;box-shadow:none;padding:18px 20px;">
+ <div style="display:flex;justify-content:space-between;align-items:center;">
+ <div>
+ <div style="font-weight:700;color:var(--sage-700);font-size:0.98rem;">🌤 Daily check-in</div>
+ <div style="font-size:0.8rem;color:var(--text-light);margin-top:2px;">4 quick taps about today</div>
+ </div>
+ <button class="btn btn-primary btn-sm" onclick="navigateTo('/test/daily')">
+ {{ '✓ Update' if today_checkin else 'Take it →' }}
+ </button>
+ </div>
+ </div>
+
+ <div class="test-hero" style="margin-top:14px;">
+ <div class="icon">🧭</div>
+ <h2>Check in with yourself</h2>
+ <p>A short set of lifestyle, anxiety (GAD-7), and depression (PHQ-9) questions to reflect on how you've been doing lately.</p>
+ <button class="btn btn-primary btn-lg mt-3" onclick="navigateTo('/welcome2')">Start new test →</button>
+
+ {% if results %}
+ <div class="latest-result-card">
+ <div class="lr-label">Most recent result</div>
+ <div class="lr-cond">{{ results[0].condition }}</div>
+ <div class="lr-date">{{ results[0].created_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+ </div>
+ {% if comparison %}
+ <div class="comparison-card">
+ Compared with your previous assessment:
+ <span class="{{ 'delta-up' if comparison.anx_delta > 0 else 'delta-down' if comparison.anx_delta < 0 else '' }}">
+ anxiety {{ '%+d'|format(comparison.anx_delta) }}
+ </span>,
+ <span class="{{ 'delta-up' if comparison.dep_delta > 0 else 'delta-down' if comparison.dep_delta < 0 else '' }}">
+ depression {{ '%+d'|format(comparison.dep_delta) }}
+ </span>
+ </div>
+ {% endif %}
+ <a class="export-link" href="/test/export">📄 Export full history as PDF</a>
+ {% endif %}
+ </div>
+
+ {% if nudges %}
+ <div class="section-title">Based on your latest result</div>
+ {% for n in nudges %}<div class="nudge-card">{{ n }}</div>{% endfor %}
+ {% endif %}
+
+ {% if results|length >= 2 %}
+ <div class="trend-chart-card">
+ <h3>Score trend</h3>
+ <canvas id="assessment-trend-chart" height="160"></canvas>
+ </div>
+ {% endif %}
+
+ <div class="section-title">Why retake it?</div>
+ <div class="empty-hint" style="padding:14px;text-align:left;">
+ Retaking the assessment every few weeks helps you and — if you choose to share it — a real professional see how things are trending over time. This isn't a diagnosis, just a gentle mirror.
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+ </div>
+
+ <!-- Sidebar drawer: past results + help -->
+ <div class="drawer-backdrop" id="drawer-backdrop" onclick="closeDrawer()"></div>
+ <div class="side-drawer" id="side-drawer">
+ <div class="drawer-header">
+ <span class="drawer-title">Assessment menu</span>
+ <button class="drawer-close" onclick="closeDrawer()" aria-label="Close menu">✕</button>
+ </div>
+
+ <div class="drawer-section-label">Past results</div>
+ {% if results %}
+ {% for r in results %}
+ <div class="drawer-history-item">
+ <div class="dh-date">{{ r.created_at.strftime('%d %b %Y, %I:%M %p') }}</div>
+ <div class="dh-cond">{{ r.condition }} <span style="font-weight:400;color:var(--text-light);">· GAD {{ r.anxiety_score }} · PHQ {{ r.depression_score }}</span></div>
+ </div>
+ {% endfor %}
+ {% else %}
+ <div class="drawer-history-item" style="color:var(--text-light);">No past results yet — take your first test to see it here.</div>
+ {% endif %}
+
+ <div class="drawer-section-label">Support</div>
+ <a class="drawer-link" href="/help">💡 Help &amp; guidance</a>
+ <a class="drawer-link" href="/dashboard">🏠 Back to dashboard</a>
+ </div>
+
+ <script src="/static/js/main.js"></script>
+ <script>
+ function openDrawer() {
+ document.getElementById('side-drawer').classList.add('open');
+ document.getElementById('drawer-backdrop').classList.add('open');
+ }
+ function closeDrawer() {
+ document.getElementById('side-drawer').classList.remove('open');
+ document.getElementById('drawer-backdrop').classList.remove('open');
+ }
+
+ const trendCanvas = document.getElementById('assessment-trend-chart');
+ if (trendCanvas) {
+ new Chart(trendCanvas.getContext('2d'), {
+ type: 'line',
+ data: {
+ labels: {{ trend_labels | tojson }},
+ datasets: [
+ { label: 'GAD-7 (anxiety)', data: {{ trend_anxiety | tojson }}, borderColor: '#50808E', backgroundColor: 'rgba(80,128,142,0.1)', tension: 0.3 },
+ { label: 'PHQ-9 (depression)', data: {{ trend_depression | tojson }}, borderColor: '#84B59F', backgroundColor: 'rgba(132,181,159,0.1)', tension: 0.3 },
+ ]
+ },
+ options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+ });
+ }
+ </script>
+</body>
+</html>

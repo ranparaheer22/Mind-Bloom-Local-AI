@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Journal — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ .journal-sub { color: var(--text-light); font-size: 0.9rem; margin-top: 2px; margin-bottom: 12px; }
+ .streak-row { display: flex; gap: 10px; margin-bottom: 14px; }
+ .streak-chip {
+ flex: 1; background: var(--sage-50); border-radius: var(--radius-md); padding: 10px; text-align: center;
+ }
+ .streak-chip .sc-num { font-size: 1.15rem; font-weight: 700; color: var(--sage-700); font-family: 'Josefin Sans', sans-serif; }
+ .streak-chip .sc-label { font-size: 0.66rem; color: var(--text-light); }
+ .search-row { display: flex; gap: 8px; margin-bottom: 10px; }
+ .search-row input { flex: 1; }
+ .filter-chip-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 14px; }
+ .filter-chip {
+ white-space: nowrap; font-size: 0.76rem; padding: 6px 12px; border-radius: 12px;
+ background: var(--sage-50); color: var(--text-dark); text-decoration: none; border: 1px solid transparent;
+ }
+ .filter-chip.active { background: var(--sage-500); color: white; }
+ .entry-card {
+ background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--sage-100);
+ padding: 18px 20px; margin-top: 14px; text-decoration: none; display: block; position: relative;
+ box-shadow: 0 6px 20px rgba(90,138,90,0.08);
+ }
+ .entry-top { display: flex; justify-content: space-between; align-items: center; }
+ .entry-date-badge {
+ font-size: 0.75rem; color: var(--sage-600); background: var(--sage-50);
+ padding: 3px 10px; border-radius: 10px; font-weight: 600;
+ }
+ .entry-flags { display: flex; align-items: center; gap: 6px; }
+ .entry-mood { font-size: 1.2rem; }
+ .entry-title { font-weight: 700; color: var(--text-dark); margin-top: 10px; font-size: 1.02rem; }
+ .entry-preview { color: var(--text-mid); font-size: 0.88rem; margin-top: 4px; line-height: 1.5; }
+ .entry-photo-count { font-size: 0.75rem; color: var(--text-light); margin-top: 8px; }
+ .entry-tags { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+ .entry-tag { font-size: 0.7rem; background: var(--sage-50); color: var(--sage-700); padding: 2px 8px; border-radius: 8px; }
+ .entry-actions { position: absolute; top: 14px; right: 16px; display: flex; gap: 4px; }
+ .entry-action-btn {
+ background: rgba(255,255,255,0.9); border: none; border-radius: 50%; width: 26px; height: 26px;
+ font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+ }
+ .fab {
+ position: fixed; bottom: 96px; right: 20px; z-index: 25;
+ width: 52px; height: 52px; border-radius: 50%;
+ background: var(--sage-500); color: white; font-size: 1.5rem;
+ display: flex; align-items: center; justify-content: center;
+ box-shadow: 0 8px 24px rgba(90,138,90,0.35); text-decoration: none;
+ }
+ @media (min-width: 431px) { .fab { right: calc(50% - 195px); } }
+ .empty-hint { color: var(--text-light); font-size: 0.9rem; text-align: center; padding: 60px 0; }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="app-shell">
+ <div class="app-topbar">
+ <span class="app-topbar-title">Your journal 📔</span>
+ <a class="app-topbar-action" href="/journal/export" style="color:var(--text-light);">📄 PDF</a>
+ </div>
+
+ <div class="app-content">
+ {% set active_subtab = 'day' %}
+ {% include 'partials/journal_subtabs.html' %}
+ <div class="journal-sub">Day by day, in your own words.</div>
+
+ <div class="streak-row">
+ <div class="streak-chip"><div class="sc-num">{{ current_streak }}</div><div class="sc-label">Current streak</div></div>
+ <div class="streak-chip"><div class="sc-num">{{ longest_streak }}</div><div class="sc-label">Longest streak</div></div>
+ <div class="streak-chip"><div class="sc-num">{{ total_days }}</div><div class="sc-label">Total days</div></div>
+ </div>
+
+ <form class="search-row" method="get" action="/journal">
+ <input class="form-input" type="text" name="q" value="{{ search }}" placeholder="Search entries, tags, mood…"/>
+ <button class="btn btn-primary btn-sm" type="submit">Search</button>
+ </form>
+
+ <div class="filter-chip-row">
+ <a class="filter-chip {{ 'active' if not view_filter and not tag_filter else '' }}" href="/journal">All</a>
+ <a class="filter-chip {{ 'active' if view_filter == 'pinned' else '' }}" href="/journal?view=pinned">📌 Pinned</a>
+ <a class="filter-chip {{ 'active' if view_filter == 'favorite' else '' }}" href="/journal?view=favorite">⭐ Favorites</a>
+ {% for t in common_tags %}
+ <a class="filter-chip {{ 'active' if tag_filter == t else '' }}" href="/journal?tag={{ t }}">#{{ t }}</a>
+ {% endfor %}
+ </div>
+
+ {% if entries %}
+ {% for e in entries %}
+ <a class="entry-card" href="/journal/{{ e.id }}">
+ <div class="entry-actions">
+ <button class="entry-action-btn" onclick="event.preventDefault();event.stopPropagation();togglePin({{ e.id }}, this)">{{ '📌' if e.is_pinned else '📍' }}</button>
+ <button class="entry-action-btn" onclick="event.preventDefault();event.stopPropagation();toggleFavorite({{ e.id }}, this)">{{ '⭐' if e.is_favorite else '☆' }}</button>
+ </div>
+ <div class="entry-top">
+ <span class="entry-date-badge">{{ e.entry_date.strftime('%d %b %Y') }}</span>
+ <span class="entry-mood">{{ e.mood_tag or '' }}</span>
+ </div>
+ <div class="entry-title">{{ e.title or 'Untitled entry' }}</div>
+ {% if e.text_content %}
+ <div class="entry-preview">{{ e.text_content[:140] }}{% if e.text_content|length > 140 %}…{% endif %}</div>
+ {% endif %}
+ {% if e.tags %}
+ <div class="entry-tags">
+ {% for t in e.tags.split(',') %}<span class="entry-tag">#{{ t }}</span>{% endfor %}
+ </div>
+ {% endif %}
+ {% if e.media %}
+ <div class="entry-photo-count">
+ {% set photo_n = e.media|selectattr('media_type','equalto','photo')|list|length %}
+ {% set video_n = e.media|selectattr('media_type','equalto','video')|list|length %}
+ {% set audio_n = e.media|selectattr('media_type','equalto','audio')|list|length %}
+ {% if photo_n %}📷 {{ photo_n }}{% endif %}
+ {% if video_n %} 🎬 {{ video_n }}{% endif %}
+ {% if audio_n %} 🎙 {{ audio_n }}{% endif %}
+ </div>
+ {% endif %}
+ </a>
+ {% endfor %}
+ {% else %}
+ <div class="empty-hint">
+ {% if search or tag_filter or view_filter %}No entries match this filter 🌿{% else %}Your pages are still blank 🌱<br/>Tap the + button to write your first entry.{% endif %}
+ </div>
+ {% endif %}
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+ </div>
+
+ <a class="fab" href="/journal/new" aria-label="New entry">+</a>
+
+ <script src="/static/js/main.js"></script>
+ <script>
+ function togglePin(id, btn) {
+ fetch(`/api/journal/${id}/pin`, { method: 'POST' })
+ .then(r => r.json())
+ .then(data => { if (data.success) btn.textContent = data.is_pinned ? '📌' : '📍'; });
+ }
+ function toggleFavorite(id, btn) {
+ fetch(`/api/journal/${id}/favorite`, { method: 'POST' })
+ .then(r => r.json())
+ .then(data => { if (data.success) btn.textContent = data.is_favorite ? '⭐' : '☆'; });
+ }
+ </script>
+</body>
+</html>

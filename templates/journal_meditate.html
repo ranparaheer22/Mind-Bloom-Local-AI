@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Meditate — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ .med-card {
+ background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-lg);
+ padding: 22px 20px; margin-bottom: 18px; box-shadow: 0 8px 24px rgba(90,138,90,0.08);
+ }
+ .med-card h3 { font-family: 'Quicksand', sans-serif; font-weight: 700; color: var(--sage-700); font-size: 1rem; margin-bottom: 4px; }
+ .med-card .med-sub { font-size: 0.8rem; color: var(--text-light); margin-bottom: 14px; }
+ .stopwatch-display {
+ text-align: center; font-family: 'Josefin Sans', sans-serif; font-size: 2.6rem;
+ color: var(--sage-700); letter-spacing: 0.03em; margin: 10px 0 16px;
+ }
+ .stopwatch-controls { display: flex; gap: 10px; justify-content: center; }
+ .stopwatch-controls .btn { min-width: 90px; }
+ .timer-presets { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 6px; }
+ .timer-preset-btn {
+ padding: 7px 14px; border-radius: 10px; border: 1px solid var(--sage-100);
+ background: var(--sage-50); color: var(--sage-700); font-size: 0.82rem; font-weight: 600; cursor: pointer;
+ }
+ .timer-preset-btn.active { background: var(--sage-500); color: white; border-color: var(--sage-500); }
+ .timer-custom-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px; font-size: 0.82rem; color: var(--text-light); }
+ .timer-custom-row input { width: 70px; }
+ .timer-ring-flash { animation: timerFlash 0.6s ease 3; }
+ @keyframes timerFlash { 0%, 100% { background: var(--surface); } 50% { background: var(--sage-100); } }
+ .music-time-row { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-light); margin-top: 6px; }
+ audio { width: 100%; margin-top: 8px; }
+ .vibe-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+ .vibe-opt {
+ font-size: 1.3rem; width: 46px; height: 46px; border-radius: 50%;
+ display: flex; align-items: center; justify-content: center;
+ background: var(--sage-50); border: 1px solid var(--sage-100); cursor: pointer;
+ }
+ .vibe-opt.active { border-color: var(--sage-500); background: var(--sage-100); transform: scale(1.08); }
+ .stat-mini { display: flex; gap: 12px; margin-bottom: 18px; }
+ .stat-mini .sm-box { flex: 1; background: var(--sage-50); border-radius: var(--radius-md); padding: 14px; text-align: center; }
+ .stat-mini .sm-num { font-size: 1.4rem; font-weight: 700; color: var(--sage-700); font-family: 'Josefin Sans', sans-serif; }
+ .stat-mini .sm-label { font-size: 0.72rem; color: var(--text-light); }
+ .med-history-item {
+ display: flex; justify-content: space-between; align-items: center;
+ background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-md);
+ padding: 10px 14px; margin-bottom: 8px; font-size: 0.85rem;
+ }
+ .med-history-item .mh-vibe { font-size: 1.2rem; }
+ .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+ .badge-chip { font-size: 0.72rem; background: var(--sage-100); color: var(--sage-700); padding: 5px 11px; border-radius: 10px; font-weight: 600; }
+ .heatmap-card { background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-lg); padding: 16px; margin-bottom: 18px; }
+ .heatmap-card h3 { font-size: 0.92rem; font-weight: 700; color: var(--sage-700); margin-bottom: 10px; }
+ .heatmap-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; }
+ .heatmap-cell { aspect-ratio: 1; border-radius: 3px; background: var(--sage-50); }
+ .heatmap-cell.active { background: var(--sage-500); }
+ .sleep-mode-row { display: flex; align-items: center; gap: 8px; justify-content: center; margin-top: 12px; font-size: 0.8rem; color: var(--text-light); }
+ .sleep-mode-row input { width: auto; }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="app-shell">
+ <div class="app-topbar">
+ <span class="app-topbar-title">Meditate 🧘</span>
+ </div>
+
+ <div class="app-content">
+ {% set active_subtab = 'meditate' %}
+ {% include 'partials/journal_subtabs.html' %}
+
+ <div class="stat-mini">
+ <div class="sm-box">
+ <div class="sm-num">{{ total_minutes }}</div>
+ <div class="sm-label">Total minutes</div>
+ </div>
+ <div class="sm-box">
+ <div class="sm-num">{{ sessions|length }}</div>
+ <div class="sm-label">Sessions logged</div>
+ </div>
+ <div class="sm-box">
+ <div class="sm-num">{{ current_streak }}</div>
+ <div class="sm-label">Day streak</div>
+ </div>
+ </div>
+
+ {% if earned_badges %}
+ <div class="badge-row">
+ {% for b in earned_badges %}<span class="badge-chip">🏅 {{ b }}</span>{% endfor %}
+ </div>
+ {% endif %}
+
+ <div class="heatmap-card">
+ <h3>Consistency (last 12 weeks)</h3>
+ <div class="heatmap-grid" id="med-heatmap"></div>
+ </div>
+
+ <!-- Stopwatch -->
+ <div class="med-card">
+ <h3>⏱ Meditation stopwatch</h3>
+ <div class="med-sub">Start it before you begin, stop when you're done.</div>
+ <div class="stopwatch-display" id="sw-display">00:00</div>
+ <div class="stopwatch-controls">
+ <button class="btn btn-primary" id="sw-start-btn" onclick="toggleStopwatch()">Start</button>
+ <button class="btn btn-outline" onclick="resetStopwatch()">Reset</button>
+ </div>
+ </div>
+
+ <!-- Countdown Timer -->
+ <div class="med-card" id="timer-card">
+ <h3>⏳ Meditation timer</h3>
+ <div class="med-sub">Set a duration — it rings when time's up, so you can meditate without watching the clock.</div>
+
+ <div class="timer-presets" id="timer-presets">
+ <span class="timer-preset-btn" data-mins="3">3 min</span>
+ <span class="timer-preset-btn active" data-mins="5">5 min</span>
+ <span class="timer-preset-btn" data-mins="10">10 min</span>
+ <span class="timer-preset-btn" data-mins="15">15 min</span>
+ <span class="timer-preset-btn" data-mins="20">20 min</span>
+ </div>
+ <div class="timer-custom-row">
+ Custom:
+ <input class="form-input" type="number" min="1" step="1" id="timer-minutes" value="5" onchange="setTimerFromInput()"/>
+ min
+ </div>
+
+ <div class="stopwatch-display" id="timer-display">05:00</div>
+ <div class="stopwatch-controls">
+ <button class="btn btn-primary" id="timer-start-btn" onclick="toggleTimer()">Start</button>
+ <button class="btn btn-outline" onclick="resetTimer()">Reset</button>
+ </div>
+ <div class="sleep-mode-row">
+ <input type="checkbox" id="sleep-mode-toggle"/>
+ <label for="sleep-mode-toggle">🌙 Sleep mode — fade music out and stop quietly instead of ringing</label>
+ </div>
+ </div>
+
+ <!-- Meditative music -->
+ <div class="med-card">
+ <h3>🎵 Meditative music</h3>
+ <div class="med-sub">Play something calming while you sit.</div>
+ <audio id="med-audio" controls preload="none" src="/static/audio/meditation-track.mp3"
+ onerror="document.getElementById('audio-fallback').style.display='block'">
+ </audio>
+ <div class="music-time-row">
+ <span id="music-start">0:00</span>
+ <span id="music-end">--:--</span>
+ </div>
+ <div id="audio-fallback" style="display:none;font-size:0.78rem;color:var(--text-light);margin-top:8px;">
+ No track found yet — drop an mp3 into <code>static/audio/meditation-track.mp3</code> and it'll play here.
+ </div>
+ </div>
+
+ <!-- Log a session -->
+ <div class="med-card">
+ <h3>📝 Log this session</h3>
+ <div class="med-sub">Uses the stopwatch time, or enter minutes manually.</div>
+ <div class="form-group">
+ <label class="form-label">Duration (minutes)</label>
+ <input class="form-input" type="number" min="1" step="1" id="inp-duration" placeholder="e.g. 10"/>
+ </div>
+ <div class="form-group">
+ <label class="form-label">How do you feel afterward?</label>
+ <div class="vibe-row" id="vibe-row">
+ <span class="vibe-opt" data-vibe="😌">😌</span>
+ <span class="vibe-opt" data-vibe="🙂">🙂</span>
+ <span class="vibe-opt" data-vibe="😐">😐</span>
+ <span class="vibe-opt" data-vibe="😴">😴</span>
+ <span class="vibe-opt" data-vibe="🌟">🌟</span>
+ </div>
+ </div>
+ <div class="form-group">
+ <input class="form-input" id="inp-med-note" maxlength="200" placeholder="Any note? (optional)"/>
+ </div>
+ <button class="btn btn-primary w-full" id="log-med-btn" onclick="logMeditation()">Save session</button>
+ </div>
+
+ <div class="section-title">Recent sessions</div>
+ <div id="med-history">
+ {% if sessions %}
+ {% for s in sessions %}
+ <div class="med-history-item">
+ <span class="mh-vibe">{{ s.vibe or '' }}</span>
+ <span>{{ s.duration_minutes }} min</span>
+ <span style="color:var(--text-light);font-size:0.75rem;">{{ s.logged_at.strftime('%d %b, %I:%M %p') }}</span>
+ </div>
+ {% endfor %}
+ {% else %}
+ <div class="empty-hint">No sessions yet — start the stopwatch above 🌱</div>
+ {% endif %}
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+ </div>
+
+ <script src="/static/js/main.js"></script>
+ <script>
+ // ── Stopwatch ──
+ let swSeconds = 0, swInterval = null, swRunning = false;
+ function formatTime(totalSeconds) {
+ const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+ const s = (totalSeconds % 60).toString().padStart(2, '0');
+ return `${m}:${s}`;
+ }
+ function toggleStopwatch() {
+ const btn = document.getElementById('sw-start-btn');
+ if (swRunning) {
+ clearInterval(swInterval);
+ swRunning = false;
+ btn.textContent = 'Resume';
+ document.getElementById('inp-duration').value = Math.max(1, Math.round(swSeconds / 60));
+ } else {
+ swInterval = setInterval(() => {
+ swSeconds++;
+ document.getElementById('sw-display').textContent = formatTime(swSeconds);
+ }, 1000);
+ swRunning = true;
+ btn.textContent = 'Pause';
+ }
+ }
+ function resetStopwatch() {
+ clearInterval(swInterval);
+ swRunning = false;
+ swSeconds = 0;
+ document.getElementById('sw-display').textContent = '00:00';
+ document.getElementById('sw-start-btn').textContent = 'Start';
+ }
+
+ // ── Countdown timer ──
+ let timerTotal = 5 * 60, timerSeconds = 5 * 60, timerInterval = null, timerRunning = false;
+
+ document.querySelectorAll('.timer-preset-btn').forEach(btn => {
+ btn.addEventListener('click', () => {
+ if (timerRunning) return; // don't let a preset change interrupt a running timer
+ document.querySelectorAll('.timer-preset-btn').forEach(b => b.classList.remove('active'));
+ btn.classList.add('active');
+ const mins = parseInt(btn.dataset.mins, 10);
+ document.getElementById('timer-minutes').value = mins;
+ timerTotal = mins * 60;
+ timerSeconds = timerTotal;
+ document.getElementById('timer-display').textContent = formatTime(timerSeconds);
+ });
+ });
+
+ function setTimerFromInput() {
+ if (timerRunning) return;
+ document.querySelectorAll('.timer-preset-btn').forEach(b => b.classList.remove('active'));
+ const mins = Math.max(1, parseFloat(document.getElementById('timer-minutes').value) || 5);
+ timerTotal = Math.round(mins * 60);
+ timerSeconds = timerTotal;
+ document.getElementById('timer-display').textContent = formatTime(timerSeconds);
+ }
+
+ function toggleTimer() {
+ const btn = document.getElementById('timer-start-btn');
+ if (timerRunning) {
+ clearInterval(timerInterval);
+ timerRunning = false;
+ btn.textContent = 'Resume';
+ return;
+ }
+ // request notification permission on the user's first interaction, not on page load
+ if ('Notification' in window && Notification.permission === 'default') {
+ Notification.requestPermission();
+ }
+ if (timerSeconds <= 0) {
+ setTimerFromInput();
+ }
+ timerInterval = setInterval(() => {
+ timerSeconds--;
+ document.getElementById('timer-display').textContent = formatTime(Math.max(0, timerSeconds));
+ if (timerSeconds <= 0) {
+ clearInterval(timerInterval);
+ timerRunning = false;
+ btn.textContent = 'Start';
+ onTimerComplete();
+ }
+ }, 1000);
+ timerRunning = true;
+ btn.textContent = 'Pause';
+ }
+
+ function resetTimer() {
+ clearInterval(timerInterval);
+ timerRunning = false;
+ document.getElementById('timer-start-btn').textContent = 'Start';
+ setTimerFromInput();
+ }
+
+ function playChime() {
+ try {
+ const ctx = new (window.AudioContext || window.webkitAudioContext)();
+ const now = ctx.currentTime;
+ [0, 0.4, 0.8].forEach((offset, i) => {
+ const osc = ctx.createOscillator();
+ const gain = ctx.createGain();
+ osc.type = 'sine';
+ osc.frequency.value = 660 + i * 110;
+ gain.gain.setValueAtTime(0.0001, now + offset);
+ gain.gain.exponentialRampToValueAtTime(0.3, now + offset + 0.05);
+ gain.gain.exponentialRampToValueAtTime(0.0001, now + offset + 0.6);
+ osc.connect(gain).connect(ctx.destination);
+ osc.start(now + offset);
+ osc.stop(now + offset + 0.65);
+ });
+ } catch (e) { /* Web Audio unsupported — silently skip the chime */ }
+ }
+
+ function fadeOutAndStopAudio(durationMs) {
+ const audio = document.getElementById('med-audio');
+ if (audio.paused) return;
+ const steps = 20;
+ const stepTime = durationMs / steps;
+ const startVolume = audio.volume;
+ let i = 0;
+ const fade = setInterval(() => {
+ i++;
+ audio.volume = Math.max(0, startVolume * (1 - i / steps));
+ if (i >= steps) {
+ clearInterval(fade);
+ audio.pause();
+ audio.volume = startVolume; // reset for next play
+ }
+ }, stepTime);
+ }
+
+ function onTimerComplete() {
+ const sleepMode = document.getElementById('sleep-mode-toggle').checked;
+ const card = document.getElementById('timer-card');
+
+ if (sleepMode) {
+ fadeOutAndStopAudio(4000);
+ showToast('Winding down 🌙', 'Music is fading out — sleep well.', 'info');
+ } else {
+ playChime();
+ card.classList.add('timer-ring-flash');
+ setTimeout(() => card.classList.remove('timer-ring-flash'), 1900);
+ showToast('Time\'s up! 🔔', 'Your meditation timer has finished.', 'success');
+ if ('Notification' in window && Notification.permission === 'granted') {
+ try { new Notification('Mind Bloom 🌿', { body: "Your meditation timer has finished." }); } catch (e) {}
+ }
+ }
+ // Pre-fill the log form with this session's length either way
+ document.getElementById('inp-duration').value = Math.round(timerTotal / 60);
+ }
+
+ document.getElementById('timer-display').textContent = formatTime(timerSeconds);
+
+ // ── Consistency heatmap ──
+ const heatmapData = {{ heatmap | tojson }};
+ const heatmapEl = document.getElementById('med-heatmap');
+ heatmapData.forEach(day => {
+ const cell = document.createElement('div');
+ cell.className = 'heatmap-cell' + (day.active ? ' active' : '');
+ cell.title = day.date + (day.active ? ' — meditated' : '');
+ heatmapEl.appendChild(cell);
+ });
+
+ // ── Music time display ──
+ const audioEl = document.getElementById('med-audio');
+ audioEl.addEventListener('loadedmetadata', () => {
+ document.getElementById('music-end').textContent = formatTime(Math.floor(audioEl.duration));
+ });
+ audioEl.addEventListener('timeupdate', () => {
+ document.getElementById('music-start').textContent = formatTime(Math.floor(audioEl.currentTime));
+ });
+
+ // ── Vibe picker ──
+ let selectedVibe = null;
+ document.querySelectorAll('.vibe-opt').forEach(el => {
+ el.addEventListener('click', () => {
+ document.querySelectorAll('.vibe-opt').forEach(o => o.classList.remove('active'));
+ el.classList.add('active');
+ selectedVibe = el.dataset.vibe;
+ });
+ });
+
+ function logMeditation() {
+ const duration = parseFloat(document.getElementById('inp-duration').value);
+ if (!duration || duration <= 0) {
+ showToast('Hey! ', 'Enter how many minutes you meditated.', 'warn');
+ return;
+ }
+ if (!selectedVibe) {
+ showToast('Hey! ', 'Pick how you felt afterward.', 'warn');
+ return;
+ }
+ const btn = document.getElementById('log-med-btn');
+ btn.disabled = true;
+ const note = document.getElementById('inp-med-note').value.trim();
+
+ fetch('/api/meditate', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ duration_minutes: duration, vibe: selectedVibe, note })
+ })
+ .then(r => r.json())
+ .then(data => {
+ btn.disabled = false;
+ if (!data.success) {
+ showToast('Hmm ', data.error || 'Could not save session.', 'error');
+ return;
+ }
+ showToast('Saved ', 'Your meditation session was logged.', 'success');
+ const history = document.getElementById('med-history');
+ const emptyHint = history.querySelector('.empty-hint');
+ if (emptyHint) emptyHint.remove();
+ const item = document.createElement('div');
+ item.className = 'med-history-item';
+ item.innerHTML = `<span class="mh-vibe">${selectedVibe}</span><span>${data.duration_minutes} min</span><span style="color:var(--text-light);font-size:0.75rem;">${data.logged_at}</span>`;
+ history.prepend(item);
+ resetStopwatch();
+ document.getElementById('inp-duration').value = '';
+ document.getElementById('inp-med-note').value = '';
+ document.querySelectorAll('.vibe-opt').forEach(o => o.classList.remove('active'));
+ selectedVibe = null;
+ })
+ .catch(() => {
+ btn.disabled = false;
+ showToast('Hmm ', 'Could not reach the server.', 'error');
+ });
+ }
+ </script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Resources — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ .res-search { margin-bottom: 10px; }
+ .res-cat-row { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; }
+ .res-cat-chip { white-space: nowrap; font-size: 0.78rem; padding: 6px 12px; border-radius: 12px; background: var(--sage-50); color: var(--text-dark); cursor: pointer; border: 1px solid transparent; }
+ .res-cat-chip.active { background: var(--sage-500); color: white; }
+ .res-card { background: var(--surface); border: 1px solid var(--sage-100); border-radius: var(--radius-lg); padding: 16px 18px; margin-bottom: 12px; }
+ .res-card .rc-top { display: flex; align-items: center; gap: 8px; }
+ .res-card .rc-icon { font-size: 1.3rem; }
+ .res-card .rc-title { font-weight: 700; color: var(--sage-700); font-size: 0.95rem; }
+ .res-card .rc-cat { font-size: 0.68rem; color: var(--text-light); background: var(--sage-50); padding: 2px 8px; border-radius: 8px; margin-left: auto; }
+ .res-card .rc-body { font-size: 0.86rem; color: var(--text-dark); margin-top: 8px; line-height: 1.5; }
+ .disclaimer-note { background: var(--sage-50); border-radius: var(--radius-md); padding: 12px 14px; font-size: 0.8rem; color: var(--text-light); margin-top: 16px; }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="app-shell">
+ <div class="app-topbar">
+ <span class="app-topbar-title">Resources 📚</span>
+ <a class="app-topbar-action" href="/dashboard" style="color:var(--text-light);">← Home</a>
+ </div>
+
+ <div class="app-content">
+ <input class="form-input res-search" id="res-search" placeholder="Search resources…" oninput="filterResources()"/>
+
+ <div class="res-cat-row" id="res-cat-row">
+ <span class="res-cat-chip active" data-cat="all" onclick="setCategory('all', this)">All</span>
+ {% for c in categories %}
+ <span class="res-cat-chip" data-cat="{{ c }}" onclick="setCategory('{{ c }}', this)">{{ c }}</span>
+ {% endfor %}
+ </div>
+
+ <div id="res-list">
+ {% for r in resources %}
+ <div class="res-card" data-cat="{{ r.category }}" data-text="{{ (r.title ~ ' ' ~ r.body) | lower }}">
+ <div class="rc-top">
+ <span class="rc-icon">{{ r.icon }}</span>
+ <span class="rc-title">{{ r.title }}</span>
+ <span class="rc-cat">{{ r.category }}</span>
+ </div>
+ <div class="rc-body">{{ r.body }}</div>
+ </div>
+ {% endfor %}
+ </div>
+
+ <div class="disclaimer-note">
+ 💡 These are educational self-help resources, not professional medical advice. If you're going through something serious or lasting, a licensed therapist or doctor can help in ways this app can't.
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+ </div>
+
+ <script src="/static/js/main.js"></script>
+ <script>
+ let activeCategory = 'all';
+ function setCategory(cat, el) {
+ activeCategory = cat;
+ document.querySelectorAll('.res-cat-chip').forEach(c => c.classList.remove('active'));
+ el.classList.add('active');
+ filterResources();
+ }
+ function filterResources() {
+ const q = document.getElementById('res-search').value.trim().toLowerCase();
+ document.querySelectorAll('.res-card').forEach(card => {
+ const matchesCat = activeCategory === 'all' || card.dataset.cat === activeCategory;
+ const matchesSearch = !q || card.dataset.text.includes(q);
+ card.style.display = (matchesCat && matchesSearch) ? 'block' : 'none';
+ });
+ }
+ </script>
+</body>
+</html>

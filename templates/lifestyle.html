@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Lifestyle — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ .ls-page {
+ min-height: 100vh;
+ padding: 90px 20px 60px;
+ }
+ .ls-inner { max-width: 720px; margin: 0 auto; }
+ .ls-header {
+ text-align: center; margin-bottom: 40px;
+ }
+ .ls-title {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 2.4rem; color: var(--sage-700);
+ }
+ .ls-sub {
+ font-size: 0.9rem; color: var(--text-light);
+ margin-top: 8px;
+ }
+ .q-card {
+ background: var(--surface);
+ border-radius: 24px;
+ padding: 36px 36px 28px;
+ margin-bottom: 24px;
+ box-shadow: 0 4px 24px rgba(90,138,90,0.1);
+ border: 1px solid var(--sage-100);
+ position: relative;
+ overflow: hidden;
+ transition: var(--transition);
+ }
+ .q-card:hover { box-shadow: 0 8px 32px rgba(90,138,90,0.16); }
+ .q-card::before {
+ content: '';
+ position: absolute; top: 0; left: 0; right: 0;
+ height: 3px;
+ background: linear-gradient(90deg, var(--sage-400), var(--sage-600));
+ }
+ .q-num {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 3.5rem; color: var(--sage-100);
+ position: absolute; top: 12px; right: 24px;
+ line-height: 1; user-select: none;
+ }
+ .q-icon { font-size: 1.8rem; margin-bottom: 10px; }
+ .q-text {
+ font-family: 'Quicksand', sans-serif;
+ font-size: 1.15rem; color: var(--text-dark);
+ line-height: 1.5; margin-bottom: 28px;
+ }
+ .slider-wrap { position: relative; }
+ .slider-labels {
+ display: flex; justify-content: space-between;
+ margin-top: 10px;
+ font-size: 0.78rem; color: var(--text-light);
+ }
+ .slider-val-display {
+ text-align: center;
+ margin-top: 14px;
+ padding: 10px 20px;
+ background: var(--sage-50);
+ border-radius: 50px;
+ border: 1px solid var(--sage-200);
+ font-size: 0.95rem; font-weight: 500;
+ color: var(--sage-700);
+ transition: var(--transition);
+ min-height: 42px;
+ }
+ .complete-row {
+ text-align: center;
+ margin-top: 40px;
+ }
+ .progress-top {
+ max-width: 720px; margin: 0 auto 24px;
+ display: flex; align-items: center; gap: 12px;
+ }
+ .progress-label {
+ font-size: 0.8rem; color: var(--text-light);
+ white-space: nowrap;
+ }
+ @media(max-width:480px){
+ .q-card { padding: 24px 20px 20px; }
+ .ls-title { font-size: 1.8rem; }
+ }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+ <div class="bg-pattern"></div>
+ <div class="app-shell">
+<nav class="topbar">
+ <div class="topbar-brand">
+ <img src="/static/images/logo.png" alt="Logo"/>
+ <span>Mind Bloom</span>
+ </div>
+ <div style="font-size:0.8rem;color:var(--text-light);">Step 3 of 7</div>
+ </nav>
+
+ <div class="ls-page">
+ <div class="ls-inner">
+ <div class="ls-header anim-fadeInUp">
+ <div style="font-size:2.5rem;margin-bottom:12px;">🌿</div>
+ <h1 class="ls-title" data-t="lifestyle_title">Answer These Basic Lifestyle Questions</h1>
+ <p class="ls-sub">All 9 questions are required • Move the sliders to answer ️</p>
+ </div>
+
+ <!-- Progress -->
+ <div class="progress-top">
+ <div class="progress-label" id="prog-label">0 / 9 answered</div>
+ <div class="progress-bar" style="flex:1"><div class="progress-fill" id="prog-fill" style="width:0%"></div></div>
+ </div>
+
+ <!-- Q1: Sleep -->
+ <div class="q-card anim-fadeInUp delay-1">
+ <div class="q-num">01</div>
+ <div class="q-icon">🌙</div>
+ <div class="q-text" data-t="q_sleep">On average, how many hours do you sleep per night?</div>
+ <div class="slider-wrap">
+ <input type="range" class="custom-range" id="q1" min="0" max="4" value="2" step="1"
+ oninput="updateSlider(1)" onchange="updateProgress()"/>
+ <div class="slider-labels">
+ <span>&lt;4h</span><span>4–5h</span><span>6–7h</span><span>7–8h</span><span>&gt;8h</span>
+ </div>
+ <div class="slider-val-display" id="q1-disp">6–7 hours </div>
+ </div>
+ </div>
+
+ <!-- Q2: Work -->
+ <div class="q-card anim-fadeInUp delay-2">
+ <div class="q-num">02</div>
+ <div class="q-icon"></div>
+ <div class="q-text" data-t="q_work">How many hours per day do you spend working or studying?</div>
+ <div class="slider-wrap">
+ <input type="range" class="custom-range" id="q2" min="0" max="4" value="2" step="1"
+ oninput="updateSlider(2)" onchange="updateProgress()"/>
+ <div class="slider-labels">
+ <span>0–2h</span><span>3–4h</span><span>5–6h</span><span>7–8h</span><span>&gt;8h</span>
+ </div>
+ <div class="slider-val-display" id="q2-disp">5–6 hours </div>
+ </div>
+ </div>
+
+ <!-- Q3: Physical Activity -->
+ <div class="q-card anim-fadeInUp delay-3">
+ <div class="q-num">03</div>
+ <div class="q-icon"></div>
+ <div class="q-text" data-t="q_activity">How many days per week do you do physical activity?</div>
+ <div class="slider-wrap">
+ <input type="range" class="custom-range" id="q3" min="0" max="7" value="3" step="1"
+ oninput="updateSlider(3)" onchange="updateProgress()"/>
+ <div class="slider-labels">
+ <span>0 days</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7 days</span>
+ </div>
+ <div class="slider-val-display" id="q3-disp">3 days/week </div>
+ </div>
+ </div>
+
+ <!-- Q4: Screen Time -->
+ <div class="q-card anim-fadeInUp delay-4">
+ <div class="q-num">04</div>
+ <div class="q-icon"></div>
+ <div class="q-text" data-t="q_screen">How many hours per day do you spend on screens?</div>
+ <div class="slider-wrap">
+ <input type="range" class="custom-range" id="q4" min="0" max="4" value="2" step="1"
+ oninput="updateSlider(4)" onchange="updateProgress()"/>
+ <div class="slider-labels">
+ <span>0–2h</span><span>3–4h</span><span>5–6h</span><span>7–8h</span><span>&gt;8h</span>
+ </div>
+ <div class="slider-val-display" id="q4-disp">5–6 hours </div>
+ </div>
+ </div>
+
+ <!-- Q5: Social Interaction -->
+ <div class="q-card anim-fadeInUp delay-5">
+ <div class="q-num">05</div>
+ <div class="q-icon"></div>
+ <div class="q-text" data-t="q_social">How would you rate your social interaction with friends/family?</div>
+ <div class="slider-wrap">
+ <input type="range" class="custom-range" id="q5" min="0" max="10" value="5" step="1"
+ oninput="updateSlider(5)" onchange="updateProgress()"/>
+ <div class="slider-labels">
+ <span>None (0)</span><span>5 — Average</span><span>Highly Active (10)</span>
+ </div>
+ <div class="slider-val-display" id="q5-disp">5 — Average </div>
+ </div>
+ </div>
+
+ <!-- Q6: Caffeine -->
+ <div class="q-card anim-fadeInUp delay-6">
+ <div class="q-num">06</div>
+ <div class="q-icon"></div>
+ <div class="q-text" data-t="q_caffeine">How much caffeine do you consume daily?</div>
+ <div class="slider-wrap">
+ <input type="range" class="custom-range" id="q6" min="0" max="5" value="2" step="1"
+ oninput="updateSlider(6)" onchange="updateProgress()"/>
+ <div class="slider-labels">
+ <span>None</span><span>Very Little</span><span>Low</span><span>Moderate</span><span>High</span><span>Very High</span>
+ </div>
+ <div class="slider-val-display" id="q6-disp">Low </div>
+ </div>
+ </div>
+
+ <!-- Q7: Alcohol -->
+ <div class="q-card anim-fadeInUp delay-7">
+ <div class="q-num">07</div>
+ <div class="q-icon"></div>
+ <div class="q-text" data-t="q_alcohol">How often do you consume alcohol?</div>
+ <div class="slider-wrap">
+ <input type="range" class="custom-range" id="q7" min="0" max="5" value="0" step="1"
+ oninput="updateSlider(7)" onchange="updateProgress()"/>
+ <div class="slider-labels">
+ <span>Never</span><span>Rarely</span><span>Occasionally</span><span>Sometimes</span><span>Often</span><span>Very Frequently</span>
+ </div>
+ <div class="slider-val-display" id="q7-disp">Never </div>
+ </div>
+ </div>
+
+ <!-- Q8: Family History -->
+ <div class="q-card anim-fadeInUp delay-8">
+ <div class="q-num">08</div>
+ <div class="q-icon">🌿</div>
+ <div class="q-text" data-t="q_family">Do you have a family history of mental health condition?</div>
+ <div class="slider-wrap">
+ <input type="range" class="custom-range" id="q8" min="0" max="1" value="0" step="1"
+ oninput="updateSlider(8)" onchange="updateProgress()"/>
+ <div class="slider-labels">
+ <span>No</span><span style="text-align:right">Yes</span>
+ </div>
+ <div class="slider-val-display" id="q8-disp">No </div>
+ </div>
+ </div>
+
+ <!-- Q9: Therapy -->
+ <div class="q-card anim-fadeInUp" style="animation-delay:0.9s">
+ <div class="q-num">09</div>
+ <div class="q-icon">🧠</div>
+ <div class="q-text" data-t="q_therapy">Have you ever received therapy or counseling for mental health?</div>
+ <div class="slider-wrap">
+ <input type="range" class="custom-range" id="q9" min="0" max="1" value="0" step="1"
+ oninput="updateSlider(9)" onchange="updateProgress()"/>
+ <div class="slider-labels">
+ <span>No</span><span style="text-align:right">Yes</span>
+ </div>
+ <div class="slider-val-display" id="q9-disp">No </div>
+ </div>
+ </div>
+
+ <!-- CTA -->
+ <div class="complete-row anim-fadeInUp" style="animation-delay:1s">
+ <p style="color:var(--text-light);font-size:0.85rem;margin-bottom:16px;" id="cta-hint">
+ Adjust all sliders, then proceed to the Anxiety Test 
+ </p>
+ <button class="btn btn-primary btn-lg" onclick="goToGAD()" data-t="check_anxiety">
+ Click Here to Test Anxiety Score 
+ </button>
+ </div>
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+</div>
+
+<script src="/static/js/main.js"></script>
+ <script>
+ const SLIDER_LABELS = {
+ 1: ['Less than 4 hrs ','4–5 hours ','6–7 hours ','7–8 hours ','More than 8 hrs '],
+ 2: ['0–2 hours ','3–4 hours ','5–6 hours ','7–8 hours ','More than 8 hrs '],
+ 3: ['0 days ','1 day/week 🌱','2 days/week ','3 days/week ','4 days/week ','5 days/week ️','6 days/week ','Every day '],
+ 4: ['0–2 hrs (Great!) ','3–4 hours ','5–6 hours ','7–8 hours ','More than 8 hrs '],
+ 5: ['None ','Very Low ','Low ','Some ','Moderate ','Average ','Good ','Very Good ','Active ','Highly Active ','Extremely Active '],
+ 6: ['None ','Very Little ','Low ','Moderate ','High ','Very High '],
+ 7: ['Never ','Rarely 🌿','Occasionally ','Sometimes ','Often ','Very Frequently '],
+ 8: ['No ','Yes '],
+ 9: ['No ','Yes ']
+ };
+
+ function updateSlider(q) {
+ const el = document.getElementById('q'+q);
+ const val = parseInt(el.value);
+ const labels = SLIDER_LABELS[q];
+ document.getElementById('q'+q+'-disp').textContent = labels[val] || val;
+ // Update filled track
+ const min = parseFloat(el.min) || 0;
+ const max = parseFloat(el.max) || 100;
+ const pct = ((val - min) / (max - min)) * 100;
+ el.style.setProperty('--range-fill', pct + '%');
+ updateProgress();
+ }
+
+ // Track which sliders have been intentionally moved
+ const interacted = new Set();
+ document.querySelectorAll('.custom-range').forEach((el, i) => {
+ const q = i + 1;
+ el.addEventListener('input', () => { interacted.add(q); updateProgress(); });
+ });
+
+ function updateProgress() {
+ const count = interacted.size;
+ document.getElementById('prog-label').textContent = count + ' / 9 answered';
+ document.getElementById('prog-fill').style.width = (count / 9 * 100) + '%';
+ }
+
+ function goToGAD() {
+ // All sliders have defaults, just read values
+ const data = {
+ sleep: parseInt(document.getElementById('q1').value),
+ work: parseInt(document.getElementById('q2').value),
+ activity: parseInt(document.getElementById('q3').value),
+ screen: parseInt(document.getElementById('q4').value),
+ social: parseInt(document.getElementById('q5').value),
+ caffeine: parseInt(document.getElementById('q6').value),
+ alcohol: parseInt(document.getElementById('q7').value),
+ family_history: parseInt(document.getElementById('q8').value),
+ therapy: parseInt(document.getElementById('q9').value)
+ };
+ MB.set('lifestyle', data);
+ navigateTo('/gad7');
+ }
+
+ // Init displays
+ window.addEventListener('DOMContentLoaded', () => {
+ for (let i = 1; i <= 9; i++) updateSlider(i);
+ // Load saved
+ const saved = MB.get('lifestyle');
+ if (saved) {
+ const keys = ['sleep','work','activity','screen','social','caffeine','alcohol','family_history','therapy'];
+ const qKeys = [1,2,3,4,5,6,7,8,9];
+ keys.forEach((k, i) => {
+ if (saved[k] !== undefined) {
+ document.getElementById('q'+(i+1)).value = saved[k];
+ updateSlider(i+1);
+ }
+ });
+ }
+ });
+ </script>
+</body>
+</html>

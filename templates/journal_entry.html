@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>{{ 'Edit entry' if entry else 'New entry' }} — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ .entry-form-card {
+ background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--sage-100);
+ padding: 32px; box-shadow: 0 12px 40px rgba(90,138,90,0.1);
+ }
+ .mood-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+ .mood-opt {
+ display: flex; flex-direction: column; align-items: center; gap: 3px;
+ font-size: 1.4rem; padding: 8px 10px; border-radius: 12px; cursor: pointer;
+ border: 1px solid var(--sage-100); background: var(--sage-50); min-width: 62px;
+ }
+ .mood-opt .mo-label { font-size: 0.66rem; font-weight: 600; color: var(--text-light); font-family: 'Quicksand', sans-serif; }
+ .mood-opt.active { border-color: var(--sage-500); background: var(--sage-100); }
+ .mood-opt.active .mo-label { color: var(--sage-700); }
+ textarea.form-input { min-height: 180px; resize: vertical; line-height: 1.6; font-family: 'Quicksand', sans-serif; }
+ .photo-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+ .media-thumb .rm {
+ position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%;
+ background: rgba(0,0,0,0.55); color: white; font-size: 0.7rem; display: flex;
+ align-items: center; justify-content: center; cursor: pointer; border: none;
+ }
+ .upload-btn {
+ display: inline-block; margin-top: 10px; padding: 10px 16px; border-radius: var(--radius-md);
+ border: 1px dashed var(--sage-300); color: var(--sage-600); font-size: 0.82rem; cursor: pointer;
+ background: var(--sage-50); text-align: center;
+ }
+ .form-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 28px; }
+ .danger-link { color: #c0392b; font-size: 0.85rem; background: none; border: none; cursor: pointer; }
+
+ .media-type-tabs { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+ .media-type-group { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+ .media-type-label { font-size: 0.82rem; font-weight: 600; color: var(--text-dark); min-width: 70px; }
+ .media-type-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+ .media-type-btns .upload-btn { margin-top: 0; }
+
+ .prompt-banner {
+ background: var(--sage-50); border-radius: var(--radius-md); padding: 12px 14px;
+ display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 16px;
+ font-size: 0.85rem; color: var(--text-dark); font-style: italic;
+ }
+ .prompt-refresh { background: none; border: none; font-size: 1rem; cursor: pointer; flex-shrink: 0; }
+ .entry-toolbar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 10px; }
+ .toolbar-toggle-btn {
+ background: var(--sage-50); border: 1px solid var(--sage-100); border-radius: 10px;
+ padding: 6px 12px; font-size: 0.8rem; cursor: pointer; color: var(--text-dark);
+ }
+ .toolbar-toggle-btn.active { background: var(--sage-500); color: white; border-color: var(--sage-500); }
+ .tag-suggest-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+ .tag-suggest-chip {
+ font-size: 0.72rem; background: var(--sage-50); color: var(--sage-700); padding: 4px 10px;
+ border-radius: 10px; cursor: pointer; border: 1px solid transparent;
+ }
+
+ /* Recorder modal */
+ .recorder-backdrop {
+ position: fixed; inset: 0; background: rgba(20,30,20,0.5); z-index: 60;
+ opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+ }
+ .recorder-backdrop.open { opacity: 1; pointer-events: auto; }
+ .recorder-modal {
+ position: fixed; left: 50%; bottom: 0; transform: translate(-50%, 100%);
+ width: 100%; max-width: 430px; background: var(--surface); border-radius: 20px 20px 0 0;
+ z-index: 61; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1);
+ max-height: 88vh; overflow-y: auto; box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+ }
+ .recorder-modal.open { transform: translate(-50%, 0); }
+ .recorder-header {
+ display: flex; justify-content: space-between; align-items: center;
+ padding: 16px 18px; border-bottom: 1px solid var(--sage-100); font-weight: 700; color: var(--sage-700);
+ }
+ .recorder-close { background: none; border: none; font-size: 1.2rem; color: var(--text-light); cursor: pointer; }
+ .recorder-body { padding: 18px; }
+ .recorder-permission-msg {
+ background: var(--sage-50); border-radius: var(--radius-md); padding: 14px; font-size: 0.85rem;
+ color: var(--text-dark); text-align: center; margin-bottom: 10px; line-height: 1.4;
+ }
+ #camera-live { width: 100%; max-height: 340px; border-radius: var(--radius-md); background: #000; object-fit: cover; }
+ #recorder-preview-area img, #recorder-preview-area video { width: 100%; max-height: 340px; border-radius: var(--radius-md); object-fit: contain; background: #000; }
+ #recorder-preview-area audio { width: 100%; }
+
+ .audio-rec-visual { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 30px 0; }
+ .audio-rec-dot { width: 14px; height: 14px; border-radius: 50%; background: #e0685c; animation: audioPulse 1.1s ease infinite; }
+ .audio-rec-dot.paused { animation: none; opacity: 0.4; }
+ @keyframes audioPulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+ #audio-rec-timer { font-family: 'Josefin Sans', sans-serif; font-size: 1.8rem; color: var(--sage-700); }
+
+ .recorder-controls { display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+ </style>
+</head>
+<body class="has-shell">
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="app-shell">
+ <div class="app-topbar">
+ <span class="app-topbar-title">{{ 'Edit entry' if entry else 'New entry' }}</span>
+ <a class="app-topbar-action" href="/journal" style="color:var(--text-light);">← Journal</a>
+ </div>
+
+ <div class="app-content">
+ <div class="entry-toolbar">
+ <button type="button" class="toolbar-toggle-btn {{ 'active' if entry and entry.is_pinned else '' }}" id="pin-toggle-btn" onclick="togglePinFavorite('pin')">📌 Pin</button>
+ <button type="button" class="toolbar-toggle-btn {{ 'active' if entry and entry.is_favorite else '' }}" id="favorite-toggle-btn" onclick="togglePinFavorite('favorite')">⭐ Favorite</button>
+ </div>
+
+ {% if prompt %}
+ <div class="prompt-banner" id="prompt-banner">
+ <span id="prompt-text">💭 {{ prompt }}</span>
+ <button type="button" class="prompt-refresh" onclick="refreshPrompt()" title="Show another prompt">🔄</button>
+ </div>
+ {% endif %}
+
+ <div class="entry-form-card">
+ <div class="form-group">
+ <label class="form-label">Date</label>
+ <input class="form-input" type="date" id="inp-date"
+ value="{{ entry.entry_date.strftime('%Y-%m-%d') if entry else '' }}"/>
+ </div>
+
+ <div class="form-group">
+ <label class="form-label">Title (optional)</label>
+ <input class="form-input" type="text" id="inp-title" maxlength="120"
+ placeholder="Give today a headline…" value="{{ entry.title if entry else '' }}"/>
+ </div>
+
+ <div class="form-group">
+ <label class="form-label">How was today?</label>
+ <div class="mood-picker" id="mood-picker">
+ <span class="mood-opt" data-mood="🌟">🌟<span class="mo-label">Amazing</span></span>
+ <span class="mood-opt" data-mood="🌿">🌿<span class="mo-label">Good</span></span>
+ <span class="mood-opt" data-mood="🍃">🍃<span class="mo-label">Okay</span></span>
+ <span class="mood-opt" data-mood="🌧">🌧<span class="mo-label">Low</span></span>
+ <span class="mood-opt" data-mood="💙">💙<span class="mo-label">Sad</span></span>
+ <span class="mood-opt" data-mood="🌀">🌀<span class="mo-label">Stressed</span></span>
+ <span class="mood-opt" data-mood="🌱">🌱<span class="mo-label">Anxious</span></span>
+ </div>
+ </div>
+
+ <div class="form-group">
+ <label class="form-label">What's on your mind?</label>
+ <textarea class="form-input" id="inp-text" placeholder="Write freely, this page is just for you…">{{ entry.text_content if entry else '' }}</textarea>
+ </div>
+
+ <div class="form-group">
+ <label class="form-label">Tags (optional)</label>
+ <input class="form-input" type="text" id="inp-tags" placeholder="work, family, goals…"
+ value="{{ entry.tags if entry and entry.tags else '' }}"/>
+ <div class="tag-suggest-row">
+ {% for t in common_tags %}
+ <span class="tag-suggest-chip" onclick="addTagSuggestion('{{ t }}')">#{{ t }}</span>
+ {% endfor %}
+ </div>
+ </div>
+
+ <div class="form-group">
+ <label class="form-label">Photos, videos &amp; voice notes</label>
+ <div class="photo-grid" id="media-grid">
+ {% if entry %}
+ {% for m in entry.media %}
+ <div class="media-thumb" data-media-id="{{ m.id }}">
+ {% if m.media_type == 'photo' %}
+ <img src="/static/uploads/journal/{{ entry.user_id }}/{{ m.filename }}" alt="Journal photo"/>
+ {% elif m.media_type == 'video' %}
+ <video src="/static/uploads/journal/{{ entry.user_id }}/{{ m.filename }}" muted></video>
+ {% else %}
+ <div class="audio-thumb">🎙</div>
+ {% endif %}
+ <button class="rm" onclick="removeExistingMedia({{ m.id }}, this)">✕</button>
+ </div>
+ {% endfor %}
+ {% endif %}
+ </div>
+
+ <div class="media-type-tabs">
+ <div class="media-type-group">
+ <span class="media-type-label">📷 Photo</span>
+ <div class="media-type-btns">
+ <button type="button" class="upload-btn" onclick="openRecorder('photo')">📸 Take photo</button>
+ <label class="upload-btn">🖼 Upload
+ <input type="file" class="media-input" accept="image/*" multiple style="display:none;" onchange="previewNewMedia(this)"/>
+ </label>
+ </div>
+ </div>
+ <div class="media-type-group">
+ <span class="media-type-label">🎬 Video</span>
+ <div class="media-type-btns">
+ <button type="button" class="upload-btn" onclick="openRecorder('video')">⏺ Record</button>
+ <label class="upload-btn">📁 Upload
+ <input type="file" class="media-input" accept="video/*" multiple style="display:none;" onchange="previewNewMedia(this)"/>
+ </label>
+ </div>
+ </div>
+ <div class="media-type-group">
+ <span class="media-type-label">🎙 Voice</span>
+ <div class="media-type-btns">
+ <button type="button" class="upload-btn" onclick="openRecorder('audio')">⏺ Record</button>
+ <label class="upload-btn">📁 Upload
+ <input type="file" class="media-input" accept="audio/*" multiple style="display:none;" onchange="previewNewMedia(this)"/>
+ </label>
+ </div>
+ </div>
+ </div>
+ <div class="photo-grid" id="new-media-preview"></div>
+ </div>
+
+ <!-- Recorder modal: photo capture / video record / audio record -->
+ <div class="recorder-backdrop" id="recorder-backdrop" onclick="closeRecorder()"></div>
+ <div class="recorder-modal" id="recorder-modal">
+ <div class="recorder-header">
+ <span id="recorder-title">Record</span>
+ <button class="recorder-close" onclick="closeRecorder()" aria-label="Close">✕</button>
+ </div>
+ <div class="recorder-body">
+ <div id="recorder-permission-msg" class="recorder-permission-msg" style="display:none;"></div>
+
+ <!-- Live camera preview (photo/video modes) -->
+ <video id="camera-live" autoplay muted playsinline style="display:none;"></video>
+ <canvas id="capture-canvas" style="display:none;"></canvas>
+
+ <!-- Audio recorder UI (audio mode) -->
+ <div id="audio-recorder-ui" style="display:none;">
+ <div class="audio-rec-visual">
+ <div class="audio-rec-dot" id="audio-rec-dot"></div>
+ <span id="audio-rec-timer">00:00</span>
+ </div>
+ </div>
+
+ <!-- Preview after capture/recording -->
+ <div id="recorder-preview-area" style="display:none;"></div>
+
+ <div class="recorder-controls" id="recorder-controls">
+ <button class="btn btn-primary" id="rec-primary-btn" onclick="recorderPrimaryAction()">Start</button>
+ <button class="btn btn-outline" id="rec-secondary-btn" onclick="recorderSecondaryAction()" style="display:none;">Pause</button>
+ <button class="btn btn-outline" id="rec-retake-btn" onclick="retakeRecording()" style="display:none;">Retake</button>
+ <button class="btn btn-primary" id="rec-use-btn" onclick="useRecording()" style="display:none;">Use this</button>
+ </div>
+ </div>
+ </div>
+
+ <div class="form-footer">
+ {% if entry %}
+ <button class="danger-link" onclick="deleteEntry()">Delete entry</button>
+ {% else %}
+ <span></span>
+ {% endif %}
+ <button class="btn btn-primary" id="save-btn" onclick="saveEntry()">Save entry</button>
+ </div>
+ </div>
+ </div>
+
+ {% include 'partials/bottom_nav.html' %}
+ </div>
+
+ <script src="/static/js/main.js"></script>
+ <script>
+ const entryId = {{ entry.id if entry else 'null' }};
+
+ // ── Pin / favorite (only meaningful once the entry exists) ──
+ function togglePinFavorite(kind) {
+ if (!entryId) {
+ showToast('Save first', 'Save this entry once, then you can pin or favorite it.', 'info');
+ return;
+ }
+ fetch(`/api/journal/${entryId}/${kind}`, { method: 'POST' })
+ .then(r => r.json())
+ .then(data => {
+ if (!data.success) return;
+ const btn = document.getElementById(kind === 'pin' ? 'pin-toggle-btn' : 'favorite-toggle-btn');
+ const active = kind === 'pin' ? data.is_pinned : data.is_favorite;
+ btn.classList.toggle('active', active);
+ });
+ }
+
+ const JOURNAL_PROMPTS_CLIENT = [
+ "What's one thing that went well today?",
+ "What made you smile today?",
+ "What is currently on your mind?",
+ "What are you grateful for right now?",
+ "What was difficult today, and how did you handle it?",
+ "What would you like tomorrow to look like?",
+ "What's something you're proud of this week?",
+ "Who or what supported you today?",
+ ];
+ function refreshPrompt() {
+ const el = document.getElementById('prompt-text');
+ if (!el) return;
+ const next = JOURNAL_PROMPTS_CLIENT[Math.floor(Math.random() * JOURNAL_PROMPTS_CLIENT.length)];
+ el.textContent = '💭 ' + next;
+ }
+
+ function addTagSuggestion(tag) {
+ const input = document.getElementById('inp-tags');
+ const current = input.value.split(',').map(t => t.trim()).filter(Boolean);
+ if (!current.includes(tag)) {
+ current.push(tag);
+ input.value = current.join(', ');
+ }
+ }
+ let selectedMood = {{ (entry.mood_tag if entry else None) | tojson }};
+ let pendingFiles = []; // accumulates files picked across the three upload buttons
+
+ document.querySelectorAll('.mood-opt').forEach(el => {
+ if (el.dataset.mood === selectedMood) el.classList.add('active');
+ el.addEventListener('click', () => {
+ document.querySelectorAll('.mood-opt').forEach(o => o.classList.remove('active'));
+ el.classList.add('active');
+ selectedMood = el.dataset.mood;
+ });
+ });
+
+ if (!document.getElementById('inp-date').value) {
+ document.getElementById('inp-date').value = new Date().toISOString().slice(0, 10);
+ }
+
+ function previewNewMedia(input) {
+ const preview = document.getElementById('new-media-preview');
+ const MAX_BYTES = 110 * 1024 * 1024; // stay safely under the 120MB server limit
+ Array.from(input.files).forEach(file => {
+ if (file.size > MAX_BYTES) {
+ showToast('File too large', `"${file.name}" is over 110MB and won't upload. Try a shorter clip or lower quality.`, 'error');
+ return;
+ }
+ pendingFiles.push(file);
+ const div = document.createElement('div');
+ div.className = 'media-thumb';
+ if (file.type.startsWith('image/')) {
+ const reader = new FileReader();
+ reader.onload = e => { div.innerHTML = `<img src="${e.target.result}" alt="New photo"/>`; };
+ reader.readAsDataURL(file);
+ } else if (file.type.startsWith('video/')) {
+ div.innerHTML = `<video src="${URL.createObjectURL(file)}" muted></video>`;
+ } else {
+ div.innerHTML = `<div class="audio-thumb">🎙</div>`;
+ }
+ preview.appendChild(div);
+ });
+ input.value = ''; // allow re-picking the same file / picking more from another button
+ }
+
+ function removeExistingMedia(mediaId, btn) {
+ fetch(`/api/journal/media/${mediaId}/delete`, { method: 'POST' })
+ .then(r => r.json())
+ .then(data => {
+ if (data.success) btn.closest('.media-thumb').remove();
+ else showToast('Hmm ', data.error || 'Could not remove file.', 'error');
+ });
+ }
+
+ // ══════════════════════════════════════════
+ // RECORDER — live photo capture / video record / WhatsApp-style audio record
+ // ══════════════════════════════════════════
+ let recMode = null;         // 'photo' | 'video' | 'audio'
+ let recStream = null;
+ let recRecorder = null;
+ let recChunks = [];
+ let recBlob = null;
+ let recCapturedPhotoBlob = null;
+ let recTimerInterval = null;
+ let recSeconds = 0;
+ let recPaused = false;
+ let recState = 'idle';      // 'idle' | 'live' | 'recording' | 'paused' | 'preview'
+
+ function pickMimeType(candidates) {
+ for (const type of candidates) {
+ if (window.MediaRecorder && MediaRecorder.isTypeSupported(type)) return type;
+ }
+ return '';
+ }
+
+ function formatRecTime(totalSeconds) {
+ const m = Math.floor(totalSeconds / 60).toString().padStart(2, '0');
+ const s = (totalSeconds % 60).toString().padStart(2, '0');
+ return `${m}:${s}`;
+ }
+
+ async function openRecorder(mode) {
+ recMode = mode;
+ recBlob = null;
+ recCapturedPhotoBlob = null;
+ recChunks = [];
+ recSeconds = 0;
+ recPaused = false;
+
+ document.getElementById('recorder-title').textContent =
+ mode === 'photo' ? 'Take a photo' : mode === 'video' ? 'Record a video' : 'Record a voice note';
+ document.getElementById('recorder-permission-msg').style.display = 'none';
+ document.getElementById('camera-live').style.display = 'none';
+ document.getElementById('audio-recorder-ui').style.display = 'none';
+ document.getElementById('recorder-preview-area').style.display = 'none';
+ document.getElementById('recorder-preview-area').innerHTML = '';
+ document.getElementById('rec-secondary-btn').style.display = 'none';
+ document.getElementById('rec-retake-btn').style.display = 'none';
+ document.getElementById('rec-use-btn').style.display = 'none';
+ const primaryBtn = document.getElementById('rec-primary-btn');
+ primaryBtn.style.display = 'inline-block';
+ primaryBtn.textContent = mode === 'photo' ? '📸 Capture' : 'Start';
+ primaryBtn.disabled = false;
+
+ document.getElementById('recorder-backdrop').classList.add('open');
+ document.getElementById('recorder-modal').classList.add('open');
+
+ const constraints = mode === 'audio'
+ ? { audio: true }
+ : { video: { facingMode: 'user' }, audio: mode === 'video' };
+
+ try {
+ recStream = await navigator.mediaDevices.getUserMedia(constraints);
+ } catch (err) {
+ const deviceWord = mode === 'audio' ? 'microphone' : 'camera';
+ document.getElementById('recorder-permission-msg').style.display = 'block';
+ document.getElementById('recorder-permission-msg').textContent =
+ `Couldn't access your ${deviceWord} (permission denied or unavailable). You can still use the Upload button instead.`;
+ primaryBtn.style.display = 'none';
+ return;
+ }
+
+ if (mode === 'audio') {
+ document.getElementById('audio-recorder-ui').style.display = 'block';
+ } else {
+ const liveVideo = document.getElementById('camera-live');
+ liveVideo.srcObject = recStream;
+ liveVideo.style.display = 'block';
+ }
+ recState = 'live';
+ }
+
+ function closeRecorder() {
+ stopAllTracks();
+ clearInterval(recTimerInterval);
+ document.getElementById('recorder-backdrop').classList.remove('open');
+ document.getElementById('recorder-modal').classList.remove('open');
+ recState = 'idle';
+ }
+
+ function stopAllTracks() {
+ if (recStream) {
+ recStream.getTracks().forEach(t => t.stop());
+ recStream = null;
+ }
+ }
+
+ function recorderPrimaryAction() {
+ if (recMode === 'photo') {
+ capturePhotoFrame();
+ } else if (recState === 'live') {
+ beginRecording();
+ } else if (recState === 'paused') {
+ resumeRecording();
+ }
+ }
+
+ function recorderSecondaryAction() {
+ if (recState === 'recording') pauseRecording();
+ else if (recState === 'paused') resumeRecording();
+ }
+
+ function capturePhotoFrame() {
+ const video = document.getElementById('camera-live');
+ const canvas = document.getElementById('capture-canvas');
+ canvas.width = video.videoWidth || 640;
+ canvas.height = video.videoHeight || 480;
+ canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+ canvas.toBlob(blob => {
+ recCapturedPhotoBlob = blob;
+ video.style.display = 'none';
+ const previewArea = document.getElementById('recorder-preview-area');
+ previewArea.innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="Captured photo"/>`;
+ previewArea.style.display = 'block';
+ document.getElementById('rec-primary-btn').style.display = 'none';
+ document.getElementById('rec-retake-btn').style.display = 'inline-block';
+ document.getElementById('rec-use-btn').style.display = 'inline-block';
+ recState = 'preview';
+ }, 'image/jpeg', 0.9);
+ }
+
+ function beginRecording() {
+ const mimeType = recMode === 'video'
+ ? pickMimeType(['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4'])
+ : pickMimeType(['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4']);
+
+ try {
+ recRecorder = mimeType ? new MediaRecorder(recStream, { mimeType }) : new MediaRecorder(recStream);
+ } catch (err) {
+ showToast('Hmm ', 'Recording is not supported in this browser. Try Upload instead.', 'error');
+ closeRecorder();
+ return;
+ }
+
+ recChunks = [];
+ recRecorder.ondataavailable = e => { if (e.data && e.data.size > 0) recChunks.push(e.data); };
+ recRecorder.onstop = () => {
+ recBlob = new Blob(recChunks, { type: recRecorder.mimeType || (recMode === 'video' ? 'video/webm' : 'audio/webm') });
+ showRecordedPreview();
+ };
+ recRecorder.start();
+
+ recSeconds = 0;
+ recPaused = false;
+ recTimerInterval = setInterval(() => {
+ if (!recPaused) {
+ recSeconds++;
+ if (recMode === 'audio') document.getElementById('audio-rec-timer').textContent = formatRecTime(recSeconds);
+ }
+ }, 1000);
+
+ const primaryBtn = document.getElementById('rec-primary-btn');
+ primaryBtn.textContent = '⏹ Stop';
+ primaryBtn.onclick = stopRecording;
+ document.getElementById('rec-secondary-btn').style.display = 'inline-block';
+ document.getElementById('rec-secondary-btn').textContent = 'Pause';
+ if (recMode === 'audio') document.getElementById('audio-rec-dot').classList.remove('paused');
+ recState = 'recording';
+ }
+
+ function pauseRecording() {
+ if (recRecorder && recRecorder.state === 'recording') {
+ recRecorder.pause();
+ recPaused = true;
+ recState = 'paused';
+ document.getElementById('rec-secondary-btn').textContent = 'Resume';
+ if (recMode === 'audio') document.getElementById('audio-rec-dot').classList.add('paused');
+ }
+ }
+
+ function resumeRecording() {
+ if (recRecorder && recRecorder.state === 'paused') {
+ recRecorder.resume();
+ recPaused = false;
+ recState = 'recording';
+ document.getElementById('rec-secondary-btn').textContent = 'Pause';
+ if (recMode === 'audio') document.getElementById('audio-rec-dot').classList.remove('paused');
+ }
+ }
+
+ function stopRecording() {
+ if (recRecorder && (recRecorder.state === 'recording' || recRecorder.state === 'paused')) {
+ recRecorder.stop();
+ }
+ clearInterval(recTimerInterval);
+ stopAllTracks();
+ document.getElementById('rec-secondary-btn').style.display = 'none';
+ }
+
+ function showRecordedPreview() {
+ const previewArea = document.getElementById('recorder-preview-area');
+ const url = URL.createObjectURL(recBlob);
+ if (recMode === 'video') {
+ document.getElementById('camera-live').style.display = 'none';
+ previewArea.innerHTML = `<video src="${url}" controls playsinline></video>`;
+ } else {
+ document.getElementById('audio-recorder-ui').style.display = 'none';
+ previewArea.innerHTML = `<audio src="${url}" controls></audio>`;
+ }
+ previewArea.style.display = 'block';
+ document.getElementById('rec-primary-btn').style.display = 'none';
+ document.getElementById('rec-retake-btn').style.display = 'inline-block';
+ document.getElementById('rec-use-btn').style.display = 'inline-block';
+ recState = 'preview';
+ }
+
+ function retakeRecording() {
+ recBlob = null;
+ recCapturedPhotoBlob = null;
+ openRecorder(recMode); // fully re-initialize: re-request stream, reset UI
+ }
+
+ function useRecording() {
+ const preview = document.getElementById('new-media-preview');
+ const stamp = Date.now();
+
+ if (recMode === 'photo' && recCapturedPhotoBlob) {
+ const file = new File([recCapturedPhotoBlob], `photo-${stamp}.jpg`, { type: 'image/jpeg' });
+ pendingFiles.push(file);
+ const div = document.createElement('div');
+ div.className = 'media-thumb';
+ div.innerHTML = `<img src="${URL.createObjectURL(recCapturedPhotoBlob)}" alt="Captured photo"/>`;
+ preview.appendChild(div);
+ } else if (recMode === 'video' && recBlob) {
+ const file = new File([recBlob], `video-${stamp}.webm`, { type: recBlob.type || 'video/webm' });
+ pendingFiles.push(file);
+ const div = document.createElement('div');
+ div.className = 'media-thumb';
+ div.innerHTML = `<video src="${URL.createObjectURL(recBlob)}" muted></video>`;
+ preview.appendChild(div);
+ } else if (recMode === 'audio' && recBlob) {
+ // Filename extension drives server-side classification — .weba is in the audio set
+ // regardless of the recorder's actual webm/ogg container, which browsers handle fine by MIME type.
+ const file = new File([recBlob], `voice-note-${stamp}.weba`, { type: recBlob.type || 'audio/webm' });
+ pendingFiles.push(file);
+ const div = document.createElement('div');
+ div.className = 'media-thumb';
+ div.innerHTML = `<div class="audio-thumb">🎙</div>`;
+ preview.appendChild(div);
+ }
+
+ closeRecorder();
+ }
+
+ function saveEntry() {
+ const btn = document.getElementById('save-btn');
+ btn.disabled = true;
+
+ const formData = new FormData();
+ formData.append('entry_date', document.getElementById('inp-date').value);
+ formData.append('title', document.getElementById('inp-title').value);
+ formData.append('text_content', document.getElementById('inp-text').value);
+ formData.append('mood_tag', selectedMood || '');
+ formData.append('tags', document.getElementById('inp-tags').value);
+ pendingFiles.forEach(file => formData.append('media', file));
+
+ const url = entryId ? `/api/journal/${entryId}` : '/api/journal';
+ fetch(url, { method: 'POST', body: formData })
+ .then(async r => {
+ const data = await r.json().catch(() => null);
+ if (!r.ok || !data || !data.success) {
+ throw new Error((data && data.error) || `Server error (${r.status})`);
+ }
+ return data;
+ })
+ .then(data => {
+ if (data.skipped_files && data.skipped_files.length) {
+ showToast('Some files skipped', `Unsupported format: ${data.skipped_files.join(', ')}.`, 'warn');
+ }
+ navigateTo(`/journal/${data.entry_id}`);
+ })
+ .catch(err => {
+ showToast('Hmm ', err.message || 'Could not save entry.', 'error');
+ document.getElementById('save-btn').disabled = false;
+ });
+ }
+
+ function deleteEntry() {
+ if (!entryId) return;
+ if (!confirm('Delete this entry? This cannot be undone.')) return;
+ fetch(`/api/journal/${entryId}/delete`, { method: 'POST' })
+ .then(r => r.json())
+ .then(data => {
+ if (data.success) navigateTo('/journal');
+ else showToast('Hmm ', data.error || 'Could not delete entry.', 'error');
+ });
+ }
+ </script>
+</body>
+</html>

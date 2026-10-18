@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8"/>
+ <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+ <title>Log in — Mind Bloom 🌿</title>
+ <link rel="stylesheet" href="/static/css/style.css"/>
+ <link rel="icon" href="/static/images/logo.png"/>
+ <style>
+ body { min-height: 100vh; display: flex; flex-direction: column; }
+ .mobile-frame { flex: 1; display: flex; flex-direction: column; }
+ .login-wrap {
+ flex: 1;
+ display: flex; align-items: center; justify-content: center;
+ padding: 80px 16px 32px;
+ }
+ .login-card {
+ max-width: 440px; width: 100%;
+ background: var(--surface);
+ border-radius: 32px;
+ padding: 48px 40px;
+ box-shadow: 0 16px 60px rgba(90,138,90,0.14);
+ border: 1px solid var(--sage-100);
+ }
+ .login-title {
+ font-family: 'Josefin Sans', sans-serif;
+ font-size: 2.4rem; color: var(--sage-700);
+ margin-bottom: 6px;
+ }
+ .login-sub {
+ font-size: 0.88rem; color: var(--text-light);
+ margin-bottom: 28px;
+ }
+ .field-error {
+ font-size: 0.8rem; color: #e53935;
+ margin-top: 5px; display: none;
+ }
+ .form-footer {
+ display: flex; justify-content: flex-end; align-items: center;
+ margin-top: 12px; gap: 12px;
+ }
+ .remember-row {
+ display: flex; align-items: center; gap: 8px; margin-top: 14px;
+ font-size: 0.85rem; color: var(--text-dark);
+ }
+ .remember-row input { width: auto; accent-color: var(--sage-500); }
+ </style>
+</head>
+<body>
+ <div id="page-loader">
+ <img src="/static/images/load.png" class="loader-img" alt="Loading"/>
+ <div class="loader-brand">Mind Bloom</div>
+ <div class="loader-dots"><span></span><span></span><span></span></div>
+ </div>
+
+ <div class="bg-pattern"></div>
+
+ <div class="mobile-frame">
+ <nav class="topbar">
+ <div class="topbar-brand">
+ <img src="/static/images/logo.png" alt="Logo"/>
+ <span>Mind Bloom</span>
+ </div>
+ </nav>
+
+ <div class="login-wrap">
+ <div class="login-card">
+ <div class="login-title anim-fadeInUp">Welcome back </div>
+ <p class="login-sub anim-fadeInUp delay-1">Log in to pick up right where you left off.</p>
+
+ <div class="form-group anim-fadeInUp delay-2">
+ <label class="form-label">Username</label>
+ <input class="form-input" id="inp-username" type="text" autocomplete="username" oninput="clearErr('form-err')"/>
+ </div>
+
+ <div class="form-group anim-fadeInUp delay-3">
+ <label class="form-label">Password</label>
+ <input class="form-input" id="inp-password" type="password" autocomplete="current-password" oninput="clearErr('form-err')"/>
+ </div>
+
+ <div class="field-error" id="form-err">Incorrect username or password.</div>
+
+ <label class="remember-row">
+ <input type="checkbox" id="inp-remember"/>
+ Keep me logged in
+ </label>
+
+ <div class="form-footer anim-fadeInUp delay-4">
+ <button class="btn btn-primary w-full" id="submit-btn" onclick="submitSignin()">Log in →</button>
+ </div>
+
+ <p style="text-align:center;font-size:0.82rem;color:var(--text-light);margin-top:18px;">
+ New here? <a href="/login" style="color:var(--sage-600);font-weight:600;">Create an account</a>
+ </p>
+ </div>
+ </div>
+ </div>
+
+ <script src="/static/js/main.js"></script>
+ <script>
+ function clearErr(id) {
+ const el = document.getElementById(id);
+ if (el) el.style.display = 'none';
+ }
+ function showErr(id, msg) {
+ const el = document.getElementById(id);
+ if (el) { if (msg) el.textContent = msg; el.style.display = 'block'; }
+ }
+
+ function submitSignin() {
+ const username = document.getElementById('inp-username').value.trim();
+ const password = document.getElementById('inp-password').value;
+ if (!username || !password) {
+ showErr('form-err', 'Please fill in both fields.');
+ return;
+ }
+ const btn = document.getElementById('submit-btn');
+ btn.disabled = true;
+
+ fetch('/api/signin', {
+ method: 'POST',
+ headers: { 'Content-Type': 'application/json' },
+ body: JSON.stringify({ username, password, remember_me: document.getElementById('inp-remember').checked })
+ })
+ .then(r => r.json())
+ .then(data => {
+ if (!data.success) {
+ showErr('form-err', data.error || 'Incorrect username or password.');
+ btn.disabled = false;
+ return;
+ }
+ MB.set('user', data.user);
+ navigateTo('/dashboard');
+ })
+ .catch(() => {
+ showErr('form-err', 'Could not reach the server. Try again.');
+ btn.disabled = false;
+ });
+ }
+ </script>
+</body>
+</html>
