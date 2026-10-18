@@ -152,10 +152,14 @@ if ML_STACK_AVAILABLE and not os.path.exists(MODEL_PATH):
 
 @app.before_request
 def sync_saved_preferences():
+    # A signed cookie can outlive a deleted user or a database reset. Never let a
+    # stale user_id survive and be mistaken for a valid authenticated session.
     uid = session.get('user_id')
     if uid:
         user = db.session.get(User, uid)
-        if user:
+        if user is None:
+            session.clear()
+        else:
             session['language'] = user.language or 'en'
             session['theme'] = user.theme or 'light'
 
@@ -227,8 +231,11 @@ with app.app_context():
 def login_required(view_func):
     @wraps(view_func)
     def wrapped(*args, **kwargs):
-        if not session.get('user_id'):
-            return redirect(url_for('signin'))
+        # Check that the session points to a real user, not just that it contains an ID.
+        user = current_user()
+        if user is None:
+            session.clear()
+            return redirect(url_for('signin', next=request.path))
         return view_func(*args, **kwargs)
     return wrapped
 
@@ -237,7 +244,11 @@ def current_user():
     uid = session.get('user_id')
     if not uid:
         return None
-    return User.query.get(uid)
+    user = db.session.get(User, uid)
+    if user is None:
+        # This can happen after a database change/reset or with an old cookie.
+        session.clear()
+    return user
 
 
 def journal_unlock_required(view_func):
@@ -795,14 +806,14 @@ def generate_pdf_response(title, subtitle, story_rows, filename):
 # ── CORE / QUIZ PAGES (unchanged) ──
 @app.route('/')
 def index():
-    if session.get('user_id'):
+    if current_user() is not None:
         return redirect(url_for('dashboard'))
     return render_template('index.html')
 
 
 @app.route('/login')
 def login():
-    if session.get('user_id'):
+    if current_user() is not None:
         return redirect(url_for('dashboard'))
     return render_template('login.html')
 
@@ -958,7 +969,7 @@ def api_register():
 # ── AUTH: SIGN IN (returning users) ──
 @app.route('/signin', methods=['GET'])
 def signin():
-    if session.get('user_id'):
+    if current_user() is not None:
         return redirect(url_for('dashboard'))
     return render_template('signin.html')
 
@@ -974,7 +985,7 @@ def api_signin():
     if not user or not user.check_password(password):
         return jsonify({'success': False, 'error': 'Incorrect username or password.'}), 401
 
-    session.permanent = remember_me  # True = stays logged in for 30 days; False = clears when the browser closes
+    session.permanent = remember_me  # Uses PERMANENT_SESSION_LIFETIME when Remember Me is selected
     session['user_id'] = user.id
     session['language'] = user.language or 'en'
     session['theme'] = user.theme or 'light'
