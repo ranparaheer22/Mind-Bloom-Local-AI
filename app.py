@@ -6,7 +6,6 @@ import random
 import calendar
 from datetime import datetime, date, timedelta
 from functools import wraps
-#from flask_login import login_required
 
 from dotenv import load_dotenv
 load_dotenv()  # reads a local .env file if present — no effect on Render, which uses real env vars
@@ -62,8 +61,33 @@ from models import (
 )
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY') or os.urandom(32)
+def _load_secret_key():
+    """Use SECRET_KEY from the environment. If it is missing, create one ONCE and keep it in a file,
+    so login cookies stay valid after a restart (a random key per start logs everyone out)."""
+    key = (os.environ.get('SECRET_KEY') or '').strip()
+    if key:
+        return key
+    key_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance', '.secret_key')
+    try:
+        os.makedirs(os.path.dirname(key_path), exist_ok=True)
+        if os.path.exists(key_path):
+            with open(key_path, 'r', encoding='utf-8') as f:
+                saved = f.read().strip()
+            if saved:
+                return saved
+        saved = uuid.uuid4().hex + uuid.uuid4().hex
+        with open(key_path, 'w', encoding='utf-8') as f:
+            f.write(saved)
+        return saved
+    except OSError:
+        return uuid.uuid4().hex + uuid.uuid4().hex
+
+
+app.secret_key = _load_secret_key()
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=3650)  # long-lived remembered login; ends when user logs out or clears app/browser data
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_REFRESH_EACH_REQUEST'] = True
 
 # ── DATABASE CONFIG ──
 db_url = os.environ.get('DATABASE_URL', 'sqlite:///mindbloom.db')
@@ -943,7 +967,7 @@ def api_register():
         return jsonify({'success': False, 'error': 'Password must be at least 6 characters.'}), 400
     if not name:
         return jsonify({'success': False, 'error': 'Name is required.'}), 400
-    if User.query.filter_by(username=username).first():
+    if User.query.filter(db.func.lower(User.username) == username.lower()).first():
         return jsonify({'success': False, 'error': 'That username is already taken.'}), 409
 
     user = User(username=username, name=name, gender=gender, language=language, theme='light')
@@ -982,7 +1006,8 @@ def api_signin():
     password = data.get('password') or ''
     remember_me = bool(data.get('remember_me'))
 
-    user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(username=username).first() \
+        or User.query.filter(db.func.lower(User.username) == username.lower()).first()
     if not user or not user.check_password(password):
         return jsonify({'success': False, 'error': 'Incorrect username or password.'}), 401
 
@@ -1773,8 +1798,8 @@ def gratitude_page():
     history = GratitudeEntry.query.filter_by(user_id=user.id) \
         .order_by(GratitudeEntry.entry_date.desc()).limit(30).all()
     return render_template('gratitude.html', user=user, today_entry=today_entry, history=history)
- 
- 
+
+
 @app.route('/api/gratitude', methods=['POST'])
 @login_required
 def api_gratitude_save():
@@ -1784,7 +1809,7 @@ def api_gratitude_save():
     item3 = (data.get('item3') or '').strip()[:200]
     if not (item1 or item2 or item3):
         return jsonify({'success': False, 'error': 'Add at least one good thing.'}), 400
- 
+
     user = current_user()
     today = date.today()
     entry = GratitudeEntry.query.filter_by(user_id=user.id, entry_date=today).first()
@@ -1878,8 +1903,8 @@ def habits_page():
             'total_days': total,
         })
     return render_template('habits.html', user=user, habit_data=habit_data)
- 
- 
+
+
 @app.route('/api/habits', methods=['POST'])
 @login_required
 def api_habit_create():
@@ -1896,8 +1921,8 @@ def api_habit_create():
         db.session.rollback()
         return jsonify({'success': False, 'error': 'Could not add habit.'}), 500
     return jsonify({'success': True, 'id': habit.id})
- 
- 
+
+
 @app.route('/api/habits/<int:habit_id>/toggle', methods=['POST'])
 @login_required
 def api_habit_toggle(habit_id):
@@ -1919,8 +1944,8 @@ def api_habit_toggle(habit_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': 'Could not update habit.'}), 500
     return jsonify({'success': True, 'done_today': done_today})
- 
- 
+
+
 @app.route('/api/habits/<int:habit_id>/delete', methods=['POST'])
 @login_required
 def api_habit_delete(habit_id):
@@ -1931,8 +1956,7 @@ def api_habit_delete(habit_id):
     habit.archived = True  # keep history, hide from list
     db.session.commit()
     return jsonify({'success': True})
- 
- 
+
 # ── RESOURCE LIBRARY ──
 @app.route('/resources')
 @login_required
