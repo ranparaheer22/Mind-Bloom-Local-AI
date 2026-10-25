@@ -14,3 +14,4 @@ Do not commit `.env`, `ai_service/.env`, virtual environments, user databases, o
 - Android WebView wrapper now requests Android microphone/camera runtime permissions and grants web media access only to the configured HTTPS site. **Rebuild the APK** to include these native permission changes.
 - Notifications settings include a persistent Light/Dark appearance selector; the retired Journal PIN link was removed.
 - “Keep me logged in” sessions have a long lifetime (10 years) and are cleared on logout; clearing app/browser data or revoking cookies can still end a session.
+"# MindBloom" 
