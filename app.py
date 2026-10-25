@@ -6,6 +6,7 @@ import random
 import calendar
 from datetime import datetime, date, timedelta
 from functools import wraps
+#from flask_login import login_required
 
 from dotenv import load_dotenv
 load_dotenv()  # reads a local .env file if present — no effect on Render, which uses real env vars
@@ -1766,12 +1767,37 @@ def api_daily_checkin():
 @app.route('/gratitude')
 @login_required
 def gratitude_page():
-    return redirect(url_for('dashboard'))
-
+    user = current_user()
+    today = date.today()
+    today_entry = GratitudeEntry.query.filter_by(user_id=user.id, entry_date=today).first()
+    history = GratitudeEntry.query.filter_by(user_id=user.id) \
+        .order_by(GratitudeEntry.entry_date.desc()).limit(30).all()
+    return render_template('gratitude.html', user=user, today_entry=today_entry, history=history)
+ 
+ 
 @app.route('/api/gratitude', methods=['POST'])
 @login_required
 def api_gratitude_save():
-    return jsonify({'success': False, 'error': 'This module has been retired.'}), 410
+    data = request.get_json(silent=True) or {}
+    item1 = (data.get('item1') or '').strip()[:200]
+    item2 = (data.get('item2') or '').strip()[:200]
+    item3 = (data.get('item3') or '').strip()[:200]
+    if not (item1 or item2 or item3):
+        return jsonify({'success': False, 'error': 'Add at least one good thing.'}), 400
+ 
+    user = current_user()
+    today = date.today()
+    entry = GratitudeEntry.query.filter_by(user_id=user.id, entry_date=today).first()
+    if not entry:
+        entry = GratitudeEntry(user_id=user.id, entry_date=today)
+        db.session.add(entry)
+    entry.item1, entry.item2, entry.item3 = item1, item2, item3
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Could not save — please try again.'}), 500
+    return jsonify({'success': True})
 
 # ── SLEEP TRACKER ──
 @app.route('/sleep')
@@ -1837,23 +1863,76 @@ def api_sleep_save():
 @app.route('/habits')
 @login_required
 def habits_page():
-    return redirect(url_for('dashboard'))
-
+    user = current_user()
+    today = date.today()
+    habits = Habit.query.filter_by(user_id=user.id, archived=False).order_by(Habit.created_at.asc()).all()
+    habit_data = []
+    for h in habits:
+        dates = {log.log_date for log in h.logs}
+        current, longest, total = compute_streak(dates)
+        habit_data.append({
+            'habit': h,
+            'done_today': today in dates,
+            'current_streak': current,
+            'longest_streak': longest,
+            'total_days': total,
+        })
+    return render_template('habits.html', user=user, habit_data=habit_data)
+ 
+ 
 @app.route('/api/habits', methods=['POST'])
 @login_required
 def api_habit_create():
-    return jsonify({'success': False, 'error': 'This module has been retired.'}), 410
-
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()[:80]
+    if not name:
+        return jsonify({'success': False, 'error': 'Give the habit a name.'}), 400
+    user = current_user()
+    habit = Habit(user_id=user.id, name=name)
+    db.session.add(habit)
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Could not add habit.'}), 500
+    return jsonify({'success': True, 'id': habit.id})
+ 
+ 
 @app.route('/api/habits/<int:habit_id>/toggle', methods=['POST'])
 @login_required
 def api_habit_toggle(habit_id):
-    return jsonify({'success': False, 'error': 'This module has been retired.'}), 410
-
+    user = current_user()
+    habit = Habit.query.filter_by(id=habit_id, user_id=user.id).first()
+    if not habit:
+        return jsonify({'success': False, 'error': 'Habit not found.'}), 404
+    today = date.today()
+    log = HabitLog.query.filter_by(habit_id=habit.id, log_date=today).first()
+    if log:
+        db.session.delete(log)
+        done_today = False
+    else:
+        db.session.add(HabitLog(habit_id=habit.id, log_date=today))
+        done_today = True
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': 'Could not update habit.'}), 500
+    return jsonify({'success': True, 'done_today': done_today})
+ 
+ 
 @app.route('/api/habits/<int:habit_id>/delete', methods=['POST'])
 @login_required
 def api_habit_delete(habit_id):
-    return jsonify({'success': False, 'error': 'This module has been retired.'}), 410
-
+    user = current_user()
+    habit = Habit.query.filter_by(id=habit_id, user_id=user.id).first()
+    if not habit:
+        return jsonify({'success': False, 'error': 'Habit not found.'}), 404
+    habit.archived = True  # keep history, hide from list
+    db.session.commit()
+    return jsonify({'success': True})
+ 
+ 
 # ── RESOURCE LIBRARY ──
 @app.route('/resources')
 @login_required
